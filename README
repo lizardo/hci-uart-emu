@@ -1,0 +1,5 @@
+hci-uart-emu is a very simple emulator of Bluetooth HCI UART transport. It can
+be used to emulate a Bluetooth device using QEMU (configured to redirect serial
+to TCP) and hciattach.
+
+HCI traffic is saved to a file which can be read using "hcidump -r".
