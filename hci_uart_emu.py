@@ -7,6 +7,15 @@ import socket
 import select
 import struct
 
+bdaddr = "ca:fe:ca:fe:ca:fe"
+bdname = "dummy"
+
+def build_bdaddr(ba):
+    return "".join([ba.split(":")[i] for i in (1, 0, 3, 2, 5, 4)]).decode("hex")
+
+def build_bdname(bn):
+    return bn + "\x00" * (248 - min(248, len(bn)))
+
 def dump_data(data, incoming=True):
     # NOTE: flags is inverted because flow is PTS -> dongle
     flags = 0x00 if incoming else 0x01
@@ -60,7 +69,7 @@ def build_event(opcode, pdata):
             return cmd_complete(opcode, rparams)
         elif ocf == 0x0009:
             # Read BD_ADDR
-            rparams = struct.pack("<B6s", 0x00, "\xfe\xca\xfe\xca\xfe\xca")
+            rparams = struct.pack("<B6s", 0x00, build_bdaddr(bdaddr))
             return cmd_complete(opcode, rparams)
     elif ogf == 0x03:
         # Controller & Baseband Commands
@@ -73,9 +82,7 @@ def build_event(opcode, pdata):
             return cmd_complete(opcode, "\x00")
         elif ocf == 0x0014:
             # Read Local Name
-            name = "dummy"
-            name += "\x00" * (248 - len(name))
-            rparams = struct.pack("<B248s", 0x00, name)
+            rparams = "\x00" + build_bdname(bdname)
             return cmd_complete(opcode, rparams)
         elif ocf == 0x0016:
             # Write Connection Accept Timeout
