@@ -167,7 +167,9 @@ def wait_data():
             continue
 
         data = sock.recv(4096, socket.MSG_DONTWAIT)
-        assert data
+        if not data:
+            return
+
         print "XXX: data:", data.encode("hex")
 
         buf += data
