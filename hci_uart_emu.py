@@ -9,6 +9,7 @@ import struct
 
 bdaddr = "ca:fe:ca:fe:ca:fe"
 bdname = "dummy"
+hci_scan = 0x00
 
 def build_bdaddr(ba):
     return "".join([ba.split(":")[i] for i in (1, 0, 3, 2, 5, 4)]).decode("hex")
@@ -51,34 +52,36 @@ def cmd_complete(opcode, rparams):
     return struct.pack("<BBB", HCI_EVENT_PKT, 0x0E, len(eparams)) + eparams
 
 def build_event(opcode, pdata):
+    global bdname, hci_scan
+
     ogf, ocf = parse_opcode(opcode)
 
-    if ogf == 0x04:
-        # Informational Parameters
-        if ocf == 0x0001:
-            # Read Local Version Information
-            rparams = struct.pack("<BBHBHH", 0x00, 6, 0x0000, 6, 65535, 0x0000)
-            return cmd_complete(opcode, rparams)
-        elif ocf == 0x0003:
-            # Read Local Supported Features
-            rparams = struct.pack("B8s", 0x00, "\xff\xff\xff\xfe\xfb\xff\x7b\x87")
-            return cmd_complete(opcode, rparams)
-        elif ocf == 0x0005:
-            # Read Buffer Size
-            rparams = struct.pack("<BHBHH", 0x00, 2048, 255, 1, 1)
-            return cmd_complete(opcode, rparams)
-        elif ocf == 0x0009:
-            # Read BD_ADDR
-            rparams = struct.pack("<B6s", 0x00, build_bdaddr(bdaddr))
-            return cmd_complete(opcode, rparams)
+    if ogf == 0x02:
+        # Link Policy Commands
+        if ocf == 0x000f:
+            # Write Default Link Policy Settings
+            return cmd_complete(opcode, "\x00")
     elif ogf == 0x03:
         # Controller & Baseband Commands
-        if ocf == 0x0003:
+        if ocf == 0x0001:
+            # Set Event Mask
+            # FIXME: implement event masking
+            return cmd_complete(opcode, "\x00")
+        elif ocf == 0x0003:
             # Reset
             return cmd_complete(opcode, "\x00")
         elif ocf == 0x0005:
             # Set Event Filter
             # FIXME: implement event filtering
+            return cmd_complete(opcode, "\x00")
+        elif ocf == 0x000d:
+            # Read Stored Link Key
+            rparams = struct.pack("<BHH", 0x00, 0, 0)
+            return cmd_complete(opcode, rparams)
+        elif ocf == 0x0013:
+            # Write Local Name
+            bdname = struct.unpack("248s", pdata)[0]
+            print "XXX: New name: %s" % bdname
             return cmd_complete(opcode, "\x00")
         elif ocf == 0x0014:
             # Read Local Name
@@ -90,6 +93,14 @@ def build_event(opcode, pdata):
         elif ocf == 0x0018:
             # Write Page Timeout
             return cmd_complete(opcode, "\x00")
+        elif ocf == 0x0019:
+            # Read Scan Enable
+            rparams = struct.pack("<BB", 0x00, hci_scan)
+            return cmd_complete(opcode, rparams)
+        elif ocf == 0x001a:
+            # Write Scan Enable
+            hci_scan = struct.unpack("B", pdata)[0]
+            return cmd_complete(opcode, "\x00")
         elif ocf == 0x0023:
             # Read Class of Device
             rparams = struct.pack("<B3s", 0x00, "\x00\x01\x04")
@@ -97,6 +108,47 @@ def build_event(opcode, pdata):
         elif ocf == 0x0025:
             # Read Voice Setting
             rparams = struct.pack("<BH", 0x00, 0x0000)
+            return cmd_complete(opcode, rparams)
+        elif ocf == 0x0045:
+            # Write Inquiry Mode
+            return cmd_complete(opcode, "\x00")
+        elif ocf == 0x0052:
+            # Write Extended Inquiry Response
+            return cmd_complete(opcode, "\x00")
+        elif ocf == 0x0055:
+            # Read Simple Pairing Mode
+            return cmd_complete(opcode, "\x00\x01")
+        elif ocf == 0x0056:
+            # Write Simple Pairing Mode
+            return cmd_complete(opcode, "\x00")
+        elif ocf == 0x0058:
+            # Read Inquiry Response Transmit Power Level
+            return cmd_complete(opcode, "\x00\x00")
+        elif ocf == 0x006d:
+            # Write LE Host Supported
+            return cmd_complete(opcode, "\x00")
+    elif ogf == 0x04:
+        # Informational Parameters
+        if ocf == 0x0001:
+            # Read Local Version Information
+            rparams = struct.pack("<BBHBHH", 0x00, 6, 0x0000, 6, 65535, 0x0000)
+            return cmd_complete(opcode, rparams)
+        elif ocf == 0x0003:
+            # Read Local Supported Features
+            rparams = struct.pack("B8s", 0x00, "\xff\xff\xff\xfe\xfb\xff\x7b\x87")
+            return cmd_complete(opcode, rparams)
+        elif ocf == 0x0004:
+            # Read Local Extended Features
+            page = struct.unpack("B", pdata)[0]
+            rparams = struct.pack("BBB8s", 0x00, page, 1, "\x07\x00\x00\x00\x00\x00\x00\x00")
+            return cmd_complete(opcode, rparams)
+        elif ocf == 0x0005:
+            # Read Buffer Size
+            rparams = struct.pack("<BHBHH", 0x00, 2048, 255, 1, 1)
+            return cmd_complete(opcode, rparams)
+        elif ocf == 0x0009:
+            # Read BD_ADDR
+            rparams = struct.pack("<B6s", 0x00, build_bdaddr(bdaddr))
             return cmd_complete(opcode, rparams)
     elif ogf == 0x08:
         # LE Controller Commands
