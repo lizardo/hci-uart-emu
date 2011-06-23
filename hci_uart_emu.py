@@ -7,9 +7,14 @@ import socket
 import select
 import struct
 
+remote_bdaddr = "f0:af:f0:af:f0:af"
+remote_bdname = "remote_dummy"
+
 bdaddr = "ca:fe:ca:fe:ca:fe"
 bdname = "dummy"
-hci_scan = 0x00
+class_of_device = "\x00\x01\x04"
+hci_scan = False
+hci_le_scan = False
 
 def build_bdaddr(ba):
     return "".join([ba.split(":")[i] for i in (1, 0, 3, 2, 5, 4)]).decode("hex")
@@ -51,12 +56,29 @@ def cmd_complete(opcode, rparams):
     eparams = struct.pack("<BH", 1, opcode) + rparams
     return struct.pack("<BBB", HCI_EVENT_PKT, 0x0E, len(eparams)) + eparams
 
+def le_adv_report():
+    eparams = struct.pack("<BBBB6s4sb", 0x02, 0x01, 0x00, 0x00, build_bdaddr(remote_bdaddr), "\x03\x02\x01\x06", -127)
+    return struct.pack("<BBB", HCI_EVENT_PKT, 0x3E, len(eparams)) + eparams
+
 def build_event(opcode, pdata):
-    global bdname, hci_scan
+    global bdname, hci_scan, hci_le_scan, class_of_device
 
     ogf, ocf = parse_opcode(opcode)
 
-    if ogf == 0x02:
+    if ogf == 0x01:
+        # Link Control Commands
+        if ocf == 0x0002:
+            # Inquiry Cancel
+            return cmd_complete(opcode, "\x00")
+        elif ocf == 0x0019:
+            # Remote Name Request
+            # Return command status, followed by remote name request complete
+            eparams = struct.pack("<BBH", 0x00, 1, opcode)
+            cmd_status = struct.pack("<BBB", HCI_EVENT_PKT, 0x0F, len(eparams)) + eparams
+            eparams = struct.pack("<B6s248s", 0x00, build_bdaddr(remote_bdaddr), build_bdname(remote_bdname))
+            remote_name_req = struct.pack("<BBB", HCI_EVENT_PKT, 0x07, len(eparams)) + eparams
+            return cmd_status + remote_name_req
+    elif ogf == 0x02:
         # Link Policy Commands
         if ocf == 0x000f:
             # Write Default Link Policy Settings
@@ -78,9 +100,13 @@ def build_event(opcode, pdata):
             # Read Stored Link Key
             rparams = struct.pack("<BHH", 0x00, 0, 0)
             return cmd_complete(opcode, rparams)
+        elif ocf == 0x0012:
+            # Delete Stored Link Key
+            rparams = struct.pack("<BH", 0x00, 0)
+            return cmd_complete(opcode, rparams)
         elif ocf == 0x0013:
             # Write Local Name
-            bdname = struct.unpack("248s", pdata)[0]
+            bdname = struct.unpack("<248s", pdata)[0]
             print "XXX: New name: %s" % bdname
             return cmd_complete(opcode, "\x00")
         elif ocf == 0x0014:
@@ -95,16 +121,21 @@ def build_event(opcode, pdata):
             return cmd_complete(opcode, "\x00")
         elif ocf == 0x0019:
             # Read Scan Enable
-            rparams = struct.pack("<BB", 0x00, hci_scan)
+            rparams = struct.pack("<BB", 0x00, 0x01 if hci_scan else 0x00)
             return cmd_complete(opcode, rparams)
         elif ocf == 0x001a:
             # Write Scan Enable
-            hci_scan = struct.unpack("B", pdata)[0]
+            hci_scan = True if struct.unpack("B", pdata)[0] else False
             return cmd_complete(opcode, "\x00")
         elif ocf == 0x0023:
             # Read Class of Device
-            rparams = struct.pack("<B3s", 0x00, "\x00\x01\x04")
+            rparams = struct.pack("<B3s", 0x00, class_of_device)
             return cmd_complete(opcode, rparams)
+        elif ocf == 0x0024:
+            # Write Class of Device
+            class_of_device = struct.unpack("<3s", pdata)[0]
+            print "XXX: New class of device: %s" % class_of_device.encode("hex")
+            return cmd_complete(opcode, "\x00")
         elif ocf == 0x0025:
             # Read Voice Setting
             rparams = struct.pack("<BH", 0x00, 0x0000)
@@ -133,14 +164,51 @@ def build_event(opcode, pdata):
             # Read Local Version Information
             rparams = struct.pack("<BBHBHH", 0x00, 6, 0x0000, 6, 65535, 0x0000)
             return cmd_complete(opcode, rparams)
+        if ocf == 0x0002:
+            # Read Local Supported Commands
+            reserved = {
+                    3: range(2, 8),
+                    4: [1],
+                    8: [4, 5],
+                    12: [2, 3],
+                    13: range(4, 8),
+                    14: [0, 1, 2, 4],
+                    16: [6, 7],
+                    17: [3],
+                    18: [4, 5, 6],
+                    20: [0, 1, 5, 6, 7],
+                    23: [3, 4],
+                    24: range(1, 8),
+                    25: [3],
+                    28: [7],
+            }
+            # reserved bytes
+            for i in range(29, 64):
+                reserved[i] = range(0, 8)
+
+            cmds = ""
+            for i in range(0, 64):
+                if not reserved.get(i):
+                    cmds += "\xff"
+                    continue
+
+                d = 0
+                for j in range(0, 8):
+                    if j not in reserved[i]:
+                        d |= 1 << j
+                cmds += chr(d)
+
+            print "XXX: Supported Commands:", cmds.encode("hex")
+            rparams = struct.pack("<B64s", 0x00, cmds)
+            return cmd_complete(opcode, rparams)
         elif ocf == 0x0003:
             # Read Local Supported Features
-            rparams = struct.pack("B8s", 0x00, "\xff\xff\xff\xfe\xfb\xff\x7b\x87")
+            rparams = struct.pack("<B8s", 0x00, "\xff\xff\xff\xfe\xfb\xff\x7b\x87")
             return cmd_complete(opcode, rparams)
         elif ocf == 0x0004:
             # Read Local Extended Features
             page = struct.unpack("B", pdata)[0]
-            rparams = struct.pack("BBB8s", 0x00, page, 1, "\x07\x00\x00\x00\x00\x00\x00\x00")
+            rparams = struct.pack("<BBB8s", 0x00, page, 1, "\x07\x00\x00\x00\x00\x00\x00\x00")
             return cmd_complete(opcode, rparams)
         elif ocf == 0x0005:
             # Read Buffer Size
@@ -156,6 +224,16 @@ def build_event(opcode, pdata):
             # LE Read Buffer Size
             rparams = struct.pack("<BHB", 0x00, 2048, 1)
             return cmd_complete(opcode, rparams)
+        elif ocf == 0x000b:
+            # LE Set Scan Parameters
+            return cmd_complete(opcode, "\x00")
+        elif ocf == 0x000c:
+            # LE Set Scan Enable
+            hci_le_scan = True if struct.unpack("B", pdata[0])[0] else False
+            if hci_le_scan:
+                return cmd_complete(opcode, "\x00") + le_adv_report()
+            else:
+                return cmd_complete(opcode, "\x00")
 
     raise NotImplementedError, "ogf = 0x%02x, ocf = 0x%04x" % (ogf, ocf)
 
@@ -183,8 +261,9 @@ def wait_data():
 
         print "XXX: handle_data:", ret
         data = build_event(*ret)
-        sock.send(data)
-        dump_data(data, False)
+        if data:
+            sock.send(data)
+            dump_data(data, False)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
