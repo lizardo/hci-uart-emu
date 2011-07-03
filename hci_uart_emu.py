@@ -15,6 +15,7 @@ bdname = "dummy"
 class_of_device = "\x00\x01\x04"
 hci_scan = False
 hci_le_scan = False
+conn_handle = 0x0001
 
 def build_bdaddr(ba):
     return "".join([ba.split(":")[i] for i in (1, 0, 3, 2, 5, 4)]).decode("hex")
@@ -33,21 +34,22 @@ def dump_data(data, incoming=True):
     dump.write(btsnoop_pkt + data)
 
 HCI_COMMAND_PKT = 1
+HCI_ACLDATA_PKT = 2
 HCI_EVENT_PKT = 4
 
 def handle_data(data):
-    pkt_type, = struct.unpack("B", data[0])
-    idx = 1
-
+    pkt_type, = struct.unpack_from("B", data, 0)
     if pkt_type == HCI_COMMAND_PKT:
         # HCI Command Packet
-        hci_command_hdr = "<HB"
-        opcode, plen = struct.unpack_from(hci_command_hdr, data, idx)
-        idx += struct.calcsize(hci_command_hdr)
-        pdata, = struct.unpack("%ds" % plen, data[idx:])
-        return (opcode, pdata)
+        hdr = "<HB"
+    elif pkt_type == HCI_ACLDATA_PKT:
+        # HCI ACL Data Packet
+        hdr = "<HH"
     else:
-        raise NotImplementedError, "pkt_type: %d" % pkt_type
+        raise NotImplementedError, "Packet type: 0x%02x" % pkt_type
+    pkt_id, dlen = struct.unpack_from(hdr, data, 1)
+    payload, = struct.unpack_from("%ds" % dlen, data, 1 + struct.calcsize(hdr))
+    return (pkt_type, pkt_id, payload)
 
 def parse_opcode(opcode):
     return (opcode >> 10, opcode & 0x03ff)
@@ -56,28 +58,91 @@ def cmd_complete(opcode, rparams):
     eparams = struct.pack("<BH", 1, opcode) + rparams
     return struct.pack("<BBB", HCI_EVENT_PKT, 0x0E, len(eparams)) + eparams
 
+def cmd_status(opcode, status):
+    eparams = struct.pack("<BBH", status, 1, opcode)
+    return struct.pack("<BBB", HCI_EVENT_PKT, 0x0F, len(eparams)) + eparams
+
 def le_adv_report():
     eparams = struct.pack("<BBBB6s4sb", 0x02, 0x01, 0x00, 0x00, build_bdaddr(remote_bdaddr), "\x03\x02\x01\x06", -127)
     return struct.pack("<BBB", HCI_EVENT_PKT, 0x3E, len(eparams)) + eparams
 
-def build_event(opcode, pdata):
+def handle_att(data):
+    if data.encode("hex") == "100100ffff0028":
+        # Discover All Primary Services
+        rdata = struct.pack("<BB", 0x11, 6)
+        for i in [(0x0001, 0x0008, 0x1800), (0x0010, 0x0010, 0x1801)]:
+            # Attribute handle, End Group Handle, Attribute Value
+            rdata += struct.pack("<HHH", *i)
+        return rdata
+    elif data.encode("hex") == "101100ffff0028":
+        # End of "Discover All Primary Services"
+        return struct.pack("<BBHB", 0x01, 0x10, 0x0011, 0x0A)
+    else:
+        raise NotImplementedError, "ATT Packet: %s" % data.encode("hex")
+
+def handle_l2cap(data):
+    hdr = "<HH"
+    dlen, cid = struct.unpack_from(hdr, data, 0)
+    if cid != 0x0004:
+        raise NotImplementedError, "Unsupported CID (%#04x)" % cid
+    payload, = struct.unpack_from("%ds" % dlen, data, struct.calcsize(hdr))
+    rdata = handle_att(payload)
+    return struct.pack(hdr, len(rdata), cid) + rdata
+
+def build_event(pkt_type, opcode, pdata):
     global bdname, hci_scan, hci_le_scan, class_of_device
+
+    if pkt_type == HCI_ACLDATA_PKT:
+        print "XXX: ACL:", (opcode, pdata.encode("hex"))
+        # Set PB flag to 10 and BC flag to 00
+        opcode &= 0xfff
+        opcode |= 1 << 13
+        rdata = handle_l2cap(pdata)
+        acl_data = struct.pack("<BHH", HCI_ACLDATA_PKT, opcode, len(rdata)) + rdata
+        eparams = struct.pack("<BHH", 1, conn_handle, 1)
+        completed = struct.pack("<BBB", HCI_EVENT_PKT, 0x13, len(eparams)) + eparams
+        return acl_data + completed
 
     ogf, ocf = parse_opcode(opcode)
 
     if ogf == 0x01:
         # Link Control Commands
-        if ocf == 0x0002:
+        if ocf == 0x0001:
+            # Inquiry
+            # Return command status, followed by inquiry complete
+            status = cmd_status(opcode, 0x00)
+            eparams = struct.pack("B", 0x00)
+            inq = struct.pack("<BBB", HCI_EVENT_PKT, 0x01, len(eparams)) + eparams
+            return status + inq
+        elif ocf == 0x0002:
             # Inquiry Cancel
             return cmd_complete(opcode, "\x00")
+        elif ocf == 0x0006:
+            # Disconnect
+            handle, reason = struct.unpack("<HB", pdata)
+            assert handle == conn_handle
+            print "XXX: disconnect (reason=%#02X)" % reason
+            # Return command status, followed by disconnection complete
+            status = cmd_status(opcode, 0x00)
+            eparams = struct.pack("<BHB", 0x00, handle, reason)
+            disconn = struct.pack("<BBB", HCI_EVENT_PKT, 0x05, len(eparams)) + eparams
+            return status + disconn
         elif ocf == 0x0019:
             # Remote Name Request
             # Return command status, followed by remote name request complete
-            eparams = struct.pack("<BBH", 0x00, 1, opcode)
-            cmd_status = struct.pack("<BBB", HCI_EVENT_PKT, 0x0F, len(eparams)) + eparams
+            status = cmd_status(opcode, 0x00)
             eparams = struct.pack("<B6s248s", 0x00, build_bdaddr(remote_bdaddr), build_bdname(remote_bdname))
             remote_name_req = struct.pack("<BBB", HCI_EVENT_PKT, 0x07, len(eparams)) + eparams
-            return cmd_status + remote_name_req
+            return status + remote_name_req
+        elif ocf == 0x001d:
+            # Read Remote Version Information
+            handle, = struct.unpack("<H", pdata)
+            assert handle == conn_handle
+            # Return command status, followed by remote version information complete
+            status = cmd_status(opcode, 0x00)
+            eparams = struct.pack("<BHBHH", 0x00, conn_handle, 6, 65535, 0x0000)
+            remote_version = struct.pack("<BBB", HCI_EVENT_PKT, 0x0C, len(eparams)) + eparams
+            return status + remote_version
     elif ogf == 0x02:
         # Link Policy Commands
         if ocf == 0x000f:
@@ -234,6 +299,16 @@ def build_event(opcode, pdata):
                 return cmd_complete(opcode, "\x00") + le_adv_report()
             else:
                 return cmd_complete(opcode, "\x00")
+        elif ocf == 0x000d:
+            # LE Create Connection
+            peer_bdaddr, = struct.unpack_from("<6s", pdata, 6)
+            assert peer_bdaddr == build_bdaddr(remote_bdaddr)
+
+            # Return command status, followed by LE connection complete
+            status = cmd_status(opcode, 0x00)
+            eparams = struct.pack("<BBHBB6sHHHB", 0x01, 0x00, conn_handle, 0x00, 0x00, build_bdaddr(remote_bdaddr), 0x0006, 0x0006, 0x000A, 0x00)
+            le_conn_complete = struct.pack("<BBB", HCI_EVENT_PKT, 0x3E, len(eparams)) + eparams
+            return status + le_conn_complete
 
     raise NotImplementedError, "ogf = 0x%02x, ocf = 0x%04x" % (ogf, ocf)
 
