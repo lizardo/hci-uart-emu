@@ -21,25 +21,54 @@ class Command(object):
     ogf = None
     ocf = None
     params = []
+    rparams = []
 
-    def __init__(self, *args, **kwds):
-        if args:
-            raise ValueError, "Invalid non-keyword parameter(s): %s" % (args,)
+    def __init__(self, payload=None, **kwds):
+        if payload:
+            # Some basic checking is done in from_payload()
+            self.payload = payload
+            return
 
         if not self.ogf or not self.ocf:
             raise ValueError, "OGF and OCF are required"
 
+        opcode = self.ogf << 10 | self.ocf
         plen = reduce(lambda x, y: x + y[1], self.params, 0)
-        self.payload = struct.pack("<HB", self.ogf << 10 | self.ocf, plen)
-        if kwds:
-            for p in self.params:
-                if p[0] not in kwds:
-                    raise ValueError, "Missing parameter: %s" % p[0]
-                if len(p) > 2:
-                    d = p[2].pack(kwds[p[0]])
-                else:
-                    d = kwds[p[0]]
-                self.payload += struct.pack("%ds" % p[1], d)
+        self.payload = struct.pack("<HB", opcode, plen)
+        for p in self.params:
+            if p[0] not in kwds:
+                raise ValueError, "Missing parameter: %s" % p[0]
+            if len(p) > 2:
+                d = p[2].pack(kwds[p[0]])
+            else:
+                d = kwds[p[0]]
+            self.payload += struct.pack("%ds" % p[1], d)
+
+    def command_complete(self, *args, **kwds):
+        if args:
+            raise ValueError, "Invalid non-keyword parameter(s): %s" % (args,)
+
+        opcode = self.ogf << 10 | self.ocf
+        from bt_lib.hci.events import CommandComplete
+        e = CommandComplete(Num_HCI_Command_Packets=1, Command_Opcode=opcode)
+        # create a private copy of e.params (which is a class attribute)
+        e.params = e.params[:] + self.rparams
+
+        payload = e.payload[2:]
+        for p in self.rparams:
+            if p[0] not in kwds:
+                raise ValueError, "Missing parameter: %s" % p[0]
+            if len(p) > 2:
+                d = p[2].pack(kwds[p[0]])
+            else:
+                d = kwds[p[0]]
+            payload += struct.pack("%ds" % p[1], d)
+
+        # Fix parameter total length
+        e.payload = struct.pack("<BB", e.evcode, len(payload))
+        e.payload += payload
+
+        return e
 
     @staticmethod
     def from_payload(payload):
@@ -55,11 +84,12 @@ class Command(object):
         if plen != len(payload[3:]):
             raise ValueError, "Parameter total length does not match payload"
 
-        c = _commands[opcode]()
-        c.payload = payload
+        c = _commands[opcode](payload)
 
         if plen != reduce(lambda x, y: x + y[1], c.params, 0):
             raise ValueError, "Parameter total length does not match command"
+
+        return c
 
     def __getattr__(self, name):
         offset = 3 # skip opcode + plen
@@ -80,4 +110,11 @@ class Inquiry(Command):
         ("LAP", 3),
         ("Inquiry_Length", 1, uint8_t),
         ("Num_Responses", 1, uint8_t),
+    ]
+
+class InquiryCancel(Command):
+    ogf = 0x01
+    ocf = 0x0002
+    rparams = [
+        ("Status", 1, uint8_t),
     ]

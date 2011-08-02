@@ -7,6 +7,9 @@ import socket
 import select
 import struct
 
+from bt_lib.hci.events import CommandComplete, CommandStatus, InquiryComplete
+from bt_lib.hci.commands import InquiryCancel
+
 remote_bdaddr = "f0:af:f0:af:f0:af"
 remote_bdname = "remote_dummy"
 
@@ -110,13 +113,13 @@ def build_event(pkt_type, opcode, pdata):
         if ocf == 0x0001:
             # Inquiry
             # Return command status, followed by inquiry complete
-            status = cmd_status(opcode, 0x00)
-            eparams = struct.pack("B", 0x00)
-            inq = struct.pack("<BBB", HCI_EVENT_PKT, 0x01, len(eparams)) + eparams
-            return status + inq
+            status = CommandStatus(Status=0x00, Num_HCI_Command_Packets=1, Command_Opcode=opcode)
+            inq_complete = InquiryComplete(Status=0x00)
+            return struct.pack("B", HCI_EVENT_PKT) + status.payload + struct.pack("B", HCI_EVENT_PKT) + inq_complete.payload
         elif ocf == 0x0002:
             # Inquiry Cancel
-            return cmd_complete(opcode, "\x00")
+            c = InquiryCancel()
+            return struct.pack("B", HCI_EVENT_PKT) + c.command_complete(Status=0x00).payload
         elif ocf == 0x0006:
             # Disconnect
             handle, reason = struct.unpack("<HB", pdata)
