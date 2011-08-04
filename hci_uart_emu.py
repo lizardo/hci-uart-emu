@@ -7,8 +7,9 @@ import socket
 import select
 import struct
 
-from bt_lib.hci.events import CommandComplete, CommandStatus, InquiryComplete
-from bt_lib.hci.commands import InquiryCancel
+from bt_lib.hci.events import Command_Status, Inquiry_Complete, \
+        Disconnection_Complete, Remote_Name_Request_Complete, Read_Remote_Version_Information_Complete
+from bt_lib.hci.commands import Command
 
 remote_bdaddr = "f0:af:f0:af:f0:af"
 remote_bdname = "remote_dummy"
@@ -16,7 +17,7 @@ remote_bdname = "remote_dummy"
 bdaddr = "ca:fe:ca:fe:ca:fe"
 bdname = "dummy"
 class_of_device = "\x00\x01\x04"
-hci_scan = False
+hci_scan = 0x00
 hci_le_scan = False
 conn_handle = 0x0001
 
@@ -107,125 +108,177 @@ def build_event(pkt_type, opcode, pdata):
         return acl_data + completed
 
     ogf, ocf = parse_opcode(opcode)
+    payload = struct.pack("<HB", opcode, len(pdata)) + pdata
+    events = None
 
     if ogf == 0x01:
         # Link Control Commands
+        c = Command.from_payload(payload)
         if ocf == 0x0001:
             # Inquiry
+            print "XXX: Inquiry(LAP=%s, Inquiry_Length=%d, Num_Responses=%d)" % \
+                    (c.LAP.encode("hex"), c.Inquiry_Length, c.Num_Responses)
+
             # Return command status, followed by inquiry complete
-            status = CommandStatus(Status=0x00, Num_HCI_Command_Packets=1, Command_Opcode=opcode)
-            inq_complete = InquiryComplete(Status=0x00)
-            return struct.pack("B", HCI_EVENT_PKT) + status.payload + struct.pack("B", HCI_EVENT_PKT) + inq_complete.payload
+            status = Command_Status(Status=0x00, Num_HCI_Command_Packets=1,
+                    Command_Opcode=opcode)
+            inq_cp = Inquiry_Complete(Status=0x00)
+
+            events = (status, inq_cp)
         elif ocf == 0x0002:
             # Inquiry Cancel
-            c = InquiryCancel()
-            return struct.pack("B", HCI_EVENT_PKT) + c.command_complete(Status=0x00).payload
+            print "XXX: Inquiry_Cancel()"
+
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0006:
             # Disconnect
-            handle, reason = struct.unpack("<HB", pdata)
-            assert handle == conn_handle
-            print "XXX: disconnect (reason=%#02X)" % reason
+            print "XXX: Disconnect(Connection_Handle=0x%04x, Reason=0x%02x)" % \
+                    (c.Connection_Handle, c.Reason)
+            assert c.Connection_Handle == conn_handle
+
             # Return command status, followed by disconnection complete
-            status = cmd_status(opcode, 0x00)
-            eparams = struct.pack("<BHB", 0x00, handle, reason)
-            disconn = struct.pack("<BBB", HCI_EVENT_PKT, 0x05, len(eparams)) + eparams
-            return status + disconn
+            status = Command_Status(Status=0x00, Num_HCI_Command_Packets=1,
+                    Command_Opcode=opcode)
+            disconn_cp = Disconnection_Complete(Status=0x00,
+                    Connection_Handle=c.Connection_Handle, Reason=c.Reason)
+
+            events = (status, disconn_cp)
         elif ocf == 0x0019:
             # Remote Name Request
+            print "XXX: Remote_Name_Request(BD_ADDR=%s, Page_Scan_Repetition_Mode=%d, Reserved=%d, Clock_Offset=%s)" % \
+                    (c.BD_ADDR.encode("hex"), c.Page_Scan_Repetition_Mode, c.Reserved, c.Clock_Offset.encode("hex"))
+
             # Return command status, followed by remote name request complete
-            status = cmd_status(opcode, 0x00)
-            eparams = struct.pack("<B6s248s", 0x00, build_bdaddr(remote_bdaddr), build_bdname(remote_bdname))
-            remote_name_req = struct.pack("<BBB", HCI_EVENT_PKT, 0x07, len(eparams)) + eparams
-            return status + remote_name_req
+            status = Command_Status(Status=0x00, Num_HCI_Command_Packets=1,
+                    Command_Opcode=opcode)
+            remote_name_req_cp = Remote_Name_Request_Complete(Status=0x00,
+                    BD_ADDR=build_bdaddr(remote_bdaddr),
+                    Remote_Name=build_bdname(remote_bdname))
+
+            events = (status, remote_name_req_cp)
         elif ocf == 0x001d:
             # Read Remote Version Information
-            handle, = struct.unpack("<H", pdata)
-            assert handle == conn_handle
+            print "XXX: Read_Remote_Version_Information(Connection_Handle=0x%04x)" % c.Connection_Handle
+            assert c.Connection_Handle == conn_handle
+
             # Return command status, followed by remote version information complete
-            status = cmd_status(opcode, 0x00)
-            eparams = struct.pack("<BHBHH", 0x00, conn_handle, 6, 65535, 0x0000)
-            remote_version = struct.pack("<BBB", HCI_EVENT_PKT, 0x0C, len(eparams)) + eparams
-            return status + remote_version
+            status = Command_Status(Status=0x00, Num_HCI_Command_Packets=1,
+                    Command_Opcode=opcode)
+            remote_version_info_cp = Read_Remote_Version_Information_Complete(Status=0x00,
+                    Connection_Handle=c.Connection_Handle,
+                    Version=6, Manufacturer_Name=65535, Subversion=0x0000)
+
+            events = (status, remote_version_info_cp)
     elif ogf == 0x02:
         # Link Policy Commands
+        c = Command.from_payload(payload)
         if ocf == 0x000f:
             # Write Default Link Policy Settings
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Write_Default_Link_Policy_Settings(Default_Link_Policy_Settings=0x%04x)" % \
+                    c.Default_Link_Policy_Settings
+
+            events = (c.command_complete(Status=0x00),)
     elif ogf == 0x03:
         # Controller & Baseband Commands
+        c = Command.from_payload(payload)
         if ocf == 0x0001:
             # Set Event Mask
-            # FIXME: implement event masking
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Set_Event_Mask(Event_Mask=%s)" % c.Event_Mask.encode("hex")
+
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0003:
             # Reset
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Reset()"
+
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0005:
             # Set Event Filter
             # FIXME: implement event filtering
-            return cmd_complete(opcode, "\x00")
+            print "XXX: [FIXME] Set_Event_Filter(Filter_Type=0x%02x, ...)" % \
+                    c.Filter_Type
+            assert c.Filter_Type == 0x00
+
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x000d:
             # Read Stored Link Key
-            rparams = struct.pack("<BHH", 0x00, 0, 0)
-            return cmd_complete(opcode, rparams)
+            print "XXX: Read_Stored_Link_Key(BD_ADDR=%s, Read_All_Flag=0x%02x)" % \
+                    (c.BD_ADDR.encode("hex"), c.Read_All_Flag)
+
+            events = (c.command_complete(Status=0x00, Max_Num_Keys=0, Num_Keys_Read=0),)
         elif ocf == 0x0012:
             # Delete Stored Link Key
-            rparams = struct.pack("<BH", 0x00, 0)
-            return cmd_complete(opcode, rparams)
+            print "XXX: Delete_Stored_Link_Key(BD_ADDR=%s, Delete_All_Flag=0x%02x)" % \
+                    (c.BD_ADDR.encode("hex"), c.Delete_All_Flag)
+
+            events = (c.command_complete(Status=0x00, Num_Keys_Deleted=0),)
         elif ocf == 0x0013:
             # Write Local Name
-            bdname = struct.unpack("<248s", pdata)[0]
+            print "XXX: Write_Local_Name(Local_Name=%s)" % c.Local_Name
+            bdname = c.Local_Name
             print "XXX: New name: %s" % bdname
-            return cmd_complete(opcode, "\x00")
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0014:
             # Read Local Name
-            rparams = "\x00" + build_bdname(bdname)
-            return cmd_complete(opcode, rparams)
+            print "XXX: Read_Local_Name()"
+            events = (c.command_complete(Status=0x00, Local_Name=build_bdname(bdname)),)
         elif ocf == 0x0016:
             # Write Connection Accept Timeout
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Write_Connection_Accept_Timeout(Conn_Accept_Timeout=0x%04x)" % \
+                    c.Conn_Accept_Timeout
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0018:
             # Write Page Timeout
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Write_Page_Timeout(Page_Timeout=0x%04x)" % c.Page_Timeout
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0019:
             # Read Scan Enable
-            rparams = struct.pack("<BB", 0x00, 0x01 if hci_scan else 0x00)
-            return cmd_complete(opcode, rparams)
+            print "XXX: Read_Scan_Enable()"
+            events = (c.command_complete(Status=0x00, Scan_Enable=hci_scan),)
         elif ocf == 0x001a:
             # Write Scan Enable
-            hci_scan = True if struct.unpack("B", pdata)[0] else False
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Write_Scan_Enable(Scan_Enable=0x%02x)" % c.Scan_Enable
+            hci_scan = c.Scan_Enable
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0023:
             # Read Class of Device
-            rparams = struct.pack("<B3s", 0x00, class_of_device)
-            return cmd_complete(opcode, rparams)
+            print "XXX: Read_Class_of_Device()"
+            events = (c.command_complete(Status=0x00, Class_of_Device=class_of_device),)
         elif ocf == 0x0024:
             # Write Class of Device
-            class_of_device = struct.unpack("<3s", pdata)[0]
+            print "XXX: Write_Class_of_Device(Class_of_Device=%s)" % c.Class_of_Device.encode("hex")
+            class_of_device = c.Class_of_Device
             print "XXX: New class of device: %s" % class_of_device.encode("hex")
-            return cmd_complete(opcode, "\x00")
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0025:
             # Read Voice Setting
-            rparams = struct.pack("<BH", 0x00, 0x0000)
-            return cmd_complete(opcode, rparams)
+            print "XXX: Read_Voice_Setting()"
+            events = (c.command_complete(Status=0x00, Voice_Setting=0x0000),)
         elif ocf == 0x0045:
             # Write Inquiry Mode
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Write_Inquiry_Mode(Inquiry_Mode=0x%02x)" % c.Inquiry_Mode
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0052:
             # Write Extended Inquiry Response
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Write_Extended_Inquiry_Response(FEC_Required=0x%02x, Extended_Inquiry_Response=%s)" % \
+                    (c.FEC_Required, c.Extended_Inquiry_Response.encode("hex"))
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0055:
             # Read Simple Pairing Mode
-            return cmd_complete(opcode, "\x00\x01")
+            print "XXX: Read_Simple_Pairing_Mode()"
+            events = (c.command_complete(Status=0x00, Simple_Pairing_Mode=0x01),)
         elif ocf == 0x0056:
             # Write Simple Pairing Mode
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Write_Simple_Pairing_Mode(Simple_Pairing_Mode=0x%02x)" % c.Simple_Pairing_Mode
+            events = (c.command_complete(Status=0x00),)
         elif ocf == 0x0058:
             # Read Inquiry Response Transmit Power Level
-            return cmd_complete(opcode, "\x00\x00")
+            print "XXX: Read_Inquiry_Response_Transmit_Power_Level()"
+            events = (c.command_complete(Status=0x00, TX_Power=0x00),)
         elif ocf == 0x006d:
             # Write LE Host Supported
-            return cmd_complete(opcode, "\x00")
+            print "XXX: Write_LE_Host_Support(LE_Supported_Host=0x%02x, Simultaneous_LE_Host=0x%02x)" % \
+                    (c.LE_Supported_Host, c.Simultaneous_LE_Host)
+            events = (c.command_complete(Status=0x00),)
     elif ogf == 0x04:
         # Informational Parameters
         if ocf == 0x0001:
@@ -312,6 +365,12 @@ def build_event(pkt_type, opcode, pdata):
             eparams = struct.pack("<BBHBB6sHHHB", 0x01, 0x00, conn_handle, 0x00, 0x00, build_bdaddr(remote_bdaddr), 0x0006, 0x0006, 0x000A, 0x00)
             le_conn_complete = struct.pack("<BBB", HCI_EVENT_PKT, 0x3E, len(eparams)) + eparams
             return status + le_conn_complete
+
+    if events:
+        d = ""
+        for e in events:
+            d += struct.pack("B", HCI_EVENT_PKT) + e.payload
+        return d
 
     raise NotImplementedError, "ogf = 0x%02x, ocf = 0x%04x" % (ogf, ocf)
 

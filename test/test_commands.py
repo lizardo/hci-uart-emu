@@ -1,6 +1,6 @@
 from nose.tools import raises
 
-from bt_lib.hci.commands import Command, Inquiry, InquiryCancel
+from bt_lib.hci.commands import Command, Inquiry, Inquiry_Cancel
 
 class FakeCommand(Command):
     ogf = 0x3f
@@ -48,7 +48,7 @@ def test_inquiry_missing_parameter():
     Inquiry(LAP="\x33\x8b\x9e")
 
 def test_inquiry_cancel():
-    c = InquiryCancel()
+    c = Inquiry_Cancel()
     e = c.command_complete(Status=0xff)
     assert e.Status == 0xff
     assert e.payload.encode("hex") == "0e04010204ff"

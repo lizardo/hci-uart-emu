@@ -76,20 +76,46 @@ class Event(object):
             offset += p[1]
         raise AttributeError
 
-class InquiryComplete(Event):
+class Inquiry_Complete(Event):
     evcode = 0x01
     params = [
         ("Status", 1, uint8_t),
     ]
 
-class CommandComplete(Event):
+class Disconnection_Complete(Event):
+    evcode = 0x05
+    params = [
+        ("Status", 1, uint8_t),
+        ("Connection_Handle", 2, uint16_t),
+        ("Reason", 1, uint8_t),
+    ]
+
+class Remote_Name_Request_Complete(Event):
+    evcode = 0x07
+    params = [
+        ("Status", 1, uint8_t),
+        ("BD_ADDR", 6),
+        ("Remote_Name", 248),
+    ]
+
+class Read_Remote_Version_Information_Complete(Event):
+    evcode = 0x0c
+    params = [
+        ("Status", 1, uint8_t),
+        ("Connection_Handle", 2, uint16_t),
+        ("Version", 1, uint8_t),
+        ("Manufacturer_Name", 2, uint16_t),
+        ("Subversion", 2, uint16_t),
+    ]
+
+class Command_Complete(Event):
     evcode = 0x0e
     params = [
         ("Num_HCI_Command_Packets", 1, uint8_t),
         ("Command_Opcode", 2, uint16_t),
     ]
 
-class CommandStatus(Event):
+class Command_Status(Event):
     evcode = 0x0f
     params = [
         ("Status", 1, uint8_t),

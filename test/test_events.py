@@ -1,6 +1,6 @@
 from nose.tools import raises
 
-from bt_lib.hci.events import Event, CommandComplete
+from bt_lib.hci.events import Event, Command_Complete
 
 class FakeEvent(Event):
     evcode = 0xff
@@ -37,7 +37,7 @@ def test_attribute2():
 
 @raises(ValueError)
 def test_missing_parameter():
-    CommandComplete(Num_HCI_Command_Packets=1)
+    Command_Complete(Num_HCI_Command_Packets=1)
 
 def test_no_format():
     e = FakeEvent(xxx="\xff")
