@@ -3,7 +3,9 @@ from construct import *
 # Commands
 
 host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+    READ_LOCAL_NAME = 0x0014,
     READ_CLASS_OF_DEV = 0x0023,
+    READ_VOICE_SETTING = 0x0025,
 )
 
 info_param_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
@@ -39,9 +41,19 @@ command = Struct("command",
 
 # Controller & Baseband (OGF 0x03)
 
+read_local_name_rp = Struct("read_local_name_rp",
+    ULInt8("status"),
+    String("name", 248, padchar="\x00"),
+)
+
 read_class_of_dev_rp = Struct("read_class_of_dev_rp",
     ULInt8("status"),
     Array(3, ULInt8("dev_class")),
+)
+
+read_voice_setting_rp = Struct("read_voice_setting_rp",
+    ULInt8("status"),
+    ULInt16("voice_setting"),
 )
 
 # Informational Parameters (OGF 0x04)
@@ -81,7 +93,9 @@ evt_cmd_complete = Struct("evt_cmd_complete",
     Switch("rparams", lambda ctx: ctx.ocf,
         {
             # Controller & Baseband (OGF 0x03)
+            "READ_LOCAL_NAME": read_local_name_rp,
             "READ_CLASS_OF_DEV": read_class_of_dev_rp,
+            "READ_VOICE_SETTING": read_voice_setting_rp,
             # Informational Parameters (OGF 0x04)
             "READ_LOCAL_VERSION": read_local_version_rp,
             "READ_LOCAL_FEATURES": read_local_features_rp,
