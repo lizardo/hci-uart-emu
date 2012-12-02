@@ -3,7 +3,7 @@ from packet import command, event
 #, acldata, scodata
 
 uart = Struct("uart",
-    Enum(Byte("packet_indicator"),
+    Enum(ULInt8("packet_indicator"),
         COMMAND = 0x01,
         ACLDATA = 0x02,
         SCODATA = 0x03,

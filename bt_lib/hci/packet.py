@@ -3,6 +3,7 @@ from construct import *
 info_param_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     READ_LOCAL_VERSION = 0x0001,
     READ_LOCAL_FEATURES = 0x0003,
+    READ_BUFFER_SIZE = 0x0005,
     READ_BD_ADDR = 0x0009,
 )
 
@@ -25,7 +26,7 @@ Opcode = Embedded(Struct("opcode",
 
 command = Struct("command",
     Opcode,
-    Byte("plen"),
+    ULInt8("plen"),
     Terminator,
 )
 
@@ -39,32 +40,41 @@ read_local_version_rp = Struct("read_local_version_rp",
 )
 
 read_local_features_rp = Struct("read_local_features_rp",
-    Byte("status"),
-    Array(8, Byte("features")),
+    ULInt8("status"),
+    Array(8, ULInt8("features")),
+)
+
+read_buffer_size_rp = Struct("read_buffer_size_rp",
+    ULInt8("status"),
+    ULInt16("acl_mtu"),
+    ULInt8("sco_mtu"),
+    ULInt16("acl_max_pkt"),
+    ULInt16("sco_max_pkt"),
 )
 
 read_bd_addr_rp = Struct("read_bd_addr_rp",
-    Byte("status"),
-    Array(6, Byte("bdaddr")),
+    ULInt8("status"),
+    Array(6, ULInt8("bdaddr")),
 )
 
 evt_cmd_complete = Struct("evt_cmd_complete",
-    Byte("ncmd"),
+    ULInt8("ncmd"),
     Opcode,
     Switch("rparams", lambda ctx: ctx.ocf,
         {
-            "READ_LOCAL_FEATURES": read_local_features_rp,
             "READ_LOCAL_VERSION": read_local_version_rp,
+            "READ_LOCAL_FEATURES": read_local_features_rp,
+            "READ_BUFFER_SIZE": read_buffer_size_rp,
             "READ_BD_ADDR": read_bd_addr_rp,
         }
     ),
 )
 
 event = Struct("event",
-    Enum(Byte("evt"),
+    Enum(ULInt8("evt"),
         CMD_COMPLETE = 0x0e,
     ),
-    Byte("plen"),
+    ULInt8("plen"),
     Switch("pdata", lambda ctx: ctx.evt,
         {
             "CMD_COMPLETE": evt_cmd_complete,
