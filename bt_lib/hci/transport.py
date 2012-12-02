@@ -1,0 +1,20 @@
+from construct import *
+from packet import command, event
+#, acldata, scodata
+
+uart = Struct("uart",
+    Enum(Byte("packet_indicator"),
+        COMMAND = 0x01,
+        ACLDATA = 0x02,
+        SCODATA = 0x03,
+        EVENT   = 0x04,
+    ),
+    Switch("packet", lambda ctx: ctx.packet_indicator,
+        {
+            "COMMAND": command,
+            #"ACLDATA": acldata,
+            #"SCODATA": scodata,
+            "EVENT": event,
+        }
+    )
+)
