@@ -42,3 +42,10 @@ def test():
     assert d.packet.plen == 10
     assert d.packet.pdata.rparams.status == 0x00
     assert d.packet.pdata.rparams.bdaddr == [0x42, 0x00, 0x00, 0x01, 0xaa, 0x00]
+
+    # HCI Command: Read Class of Device (0x03|0x0023) plen 0
+    d = uart.parse("01 23 0C 00".replace(" ","").decode("hex"))
+    assert d.packet_indicator == "COMMAND"
+    assert d.packet.ogf == "HOST_CTL"
+    assert d.packet.ocf == "READ_CLASS_OF_DEV"
+    assert d.packet.plen == 0

@@ -1,5 +1,11 @@
 from construct import *
 
+# Commands
+
+host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+    READ_CLASS_OF_DEV = 0x0023,
+)
+
 info_param_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     READ_LOCAL_VERSION = 0x0001,
     READ_LOCAL_FEATURES = 0x0003,
@@ -19,6 +25,7 @@ Opcode = Embedded(Struct("opcode",
     ),
     Switch("ocf", lambda ctx: ctx.ogf,
         {
+            "HOST_CTL": host_ctl_commands,
             "INFO_PARAM": info_param_commands,
         }
     ),
@@ -29,6 +36,15 @@ command = Struct("command",
     ULInt8("plen"),
     Terminator,
 )
+
+# Controller & Baseband (OGF 0x03)
+
+read_class_of_dev_rp = Struct("read_class_of_dev_rp",
+    ULInt8("status"),
+    Array(3, ULInt8("dev_class")),
+)
+
+# Informational Parameters (OGF 0x04)
 
 read_local_version_rp = Struct("read_local_version_rp",
     ULInt8("status"),
@@ -57,11 +73,16 @@ read_bd_addr_rp = Struct("read_bd_addr_rp",
     Array(6, ULInt8("bdaddr")),
 )
 
+# Events
+
 evt_cmd_complete = Struct("evt_cmd_complete",
     ULInt8("ncmd"),
     Opcode,
     Switch("rparams", lambda ctx: ctx.ocf,
         {
+            # Controller & Baseband (OGF 0x03)
+            "READ_CLASS_OF_DEV": read_class_of_dev_rp,
+            # Informational Parameters (OGF 0x04)
             "READ_LOCAL_VERSION": read_local_version_rp,
             "READ_LOCAL_FEATURES": read_local_features_rp,
             "READ_BUFFER_SIZE": read_buffer_size_rp,
