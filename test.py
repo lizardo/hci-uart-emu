@@ -59,3 +59,12 @@ def test():
     assert d.packet.ocf == "SET_EVENT_FLT"
     assert d.packet.plen == 1
     assert d.packet.pdata.flt_type == "CLEAR_ALL"
+
+    # HCI Command: Write Connection Accept Timeout (0x03|0x0016) plen 2
+    #     timeout 32000
+    d = uart.parse("01 16 0C 02 00 7D".replace(" ","").decode("hex"))
+    assert d.packet_indicator == "COMMAND"
+    assert d.packet.ogf == "HOST_CTL"
+    assert d.packet.ocf == "WRITE_CONN_ACCEPT_TIMEOUT"
+    assert d.packet.plen == 2
+    assert d.packet.pdata.timeout == 32000

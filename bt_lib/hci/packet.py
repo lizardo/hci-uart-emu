@@ -5,6 +5,7 @@ from construct import *
 host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     SET_EVENT_FLT = 0x0005,
     READ_LOCAL_NAME = 0x0014,
+    WRITE_CONN_ACCEPT_TIMEOUT = 0x0016,
     READ_CLASS_OF_DEV = 0x0023,
     READ_VOICE_SETTING = 0x0025,
 )
@@ -62,6 +63,14 @@ set_event_flt_rp = Struct("set_event_flt_rp",
 read_local_name_rp = Struct("read_local_name_rp",
     ULInt8("status"),
     String("name", 248, padchar="\x00"),
+)
+
+write_conn_accept_timeout_cp = Struct("write_conn_accept_timeout_cp",
+    ULInt16("timeout"),
+)
+
+write_conn_accept_timeout_rp = Struct("write_conn_accept_timeout_rp",
+    ULInt8("status"),
 )
 
 read_class_of_dev_rp = Struct("read_class_of_dev_rp",
@@ -138,6 +147,7 @@ command = Struct("command",
             {
                 # Controller & Baseband (OGF 0x03)
                 "SET_EVENT_FLT": set_event_flt_cp,
+                "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_cp,
             }
         ),
     ),
@@ -154,6 +164,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
             # Controller & Baseband (OGF 0x03)
             "SET_EVENT_FLT": set_event_flt_rp,
             "READ_LOCAL_NAME": read_local_name_rp,
+            "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_rp,
             "READ_CLASS_OF_DEV": read_class_of_dev_rp,
             "READ_VOICE_SETTING": read_voice_setting_rp,
             # Informational Parameters (OGF 0x04)
