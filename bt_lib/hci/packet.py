@@ -1,45 +1,63 @@
 from construct import *
 
-# Commands
+# Controller & Baseband (OGF 0x03)
 
 host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+    SET_EVENT_FLT = 0x0005,
     READ_LOCAL_NAME = 0x0014,
     READ_CLASS_OF_DEV = 0x0023,
     READ_VOICE_SETTING = 0x0025,
 )
 
-info_param_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
-    READ_LOCAL_VERSION = 0x0001,
-    READ_LOCAL_FEATURES = 0x0003,
-    READ_BUFFER_SIZE = 0x0005,
-    READ_BD_ADDR = 0x0009,
+set_event_flt_cp = Struct("set_event_flt_cp",
+    Enum(ULInt8("flt_type"),
+        CLEAR_ALL = 0x00,
+        INQ_RESULT = 0x01,
+        CONN_SETUP = 0x02,
+    ),
+    If(lambda ctx: ctx.flt_type != "CLEAR_ALL",
+        Switch("cond_type", lambda ctx: ctx.flt_type,
+            {
+                "INQ_RESULT": Enum(ULInt8("cond_type"),
+                    RETURN_ALL = 0x00,
+                    RETURN_CLASS = 0x01,
+                    RETURN_BDADDR = 0x02,
+                ),
+                "CONN_SETUP": Enum(ULInt8("cond_type"),
+                    ALLOW_ALL = 0x00,
+                    ALLOW_CLASS = 0x01,
+                    ALLOW_BDADDR = 0x02,
+                ),
+            }
+        ),
+    ),
+    If(lambda ctx: ctx.flt_type != "CLEAR_ALL",
+        Switch("condition", lambda ctx: ctx.cond_type,
+            {
+                "RETURN_ALL": Pass,
+                "RETURN_CLASS": Struct("cond_class",
+                    Array(3, ULInt8("dev_class")),
+                    Array(3, ULInt8("dev_class_mask")),
+                ),
+                "RETURN_BDADDR": Array(6, ULInt8("bdaddr")),
+                "ALLOW_ALL": ULInt8("auto_accept_flag"),
+                "ALLOW_CLASS": Struct("cond_class",
+                    Array(3, ULInt8("dev_class")),
+                    Array(3, ULInt8("dev_class_mask")),
+                    ULInt8("auto_accept_flag"),
+                ),
+                "ALLOW_BDADDR": Struct("cond_bdaddr",
+                    Array(6, ULInt8("bdaddr")),
+                    ULInt8("auto_accept_flag"),
+                ),
+            }
+        ),
+    ),
 )
 
-Opcode = Embedded(Struct("opcode",
-    ULInt16("opcode"),
-    Enum(Value("ogf", lambda ctx: ctx.opcode >> 10 & 0x3f),
-        LINK_CTL = 0x01,
-        LINK_POLICY = 0x02,
-        HOST_CTL = 0x03,
-        INFO_PARAM = 0x04,
-        STATUS_PARAM = 0x05,
-        LE_CTL = 0x08,
-    ),
-    Switch("ocf", lambda ctx: ctx.ogf,
-        {
-            "HOST_CTL": host_ctl_commands,
-            "INFO_PARAM": info_param_commands,
-        }
-    ),
-))
-
-command = Struct("command",
-    Opcode,
-    ULInt8("plen"),
-    Terminator,
+set_event_flt_rp = Struct("set_event_flt_rp",
+    ULInt8("status"),
 )
-
-# Controller & Baseband (OGF 0x03)
 
 read_local_name_rp = Struct("read_local_name_rp",
     ULInt8("status"),
@@ -57,6 +75,13 @@ read_voice_setting_rp = Struct("read_voice_setting_rp",
 )
 
 # Informational Parameters (OGF 0x04)
+
+info_param_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+    READ_LOCAL_VERSION = 0x0001,
+    READ_LOCAL_FEATURES = 0x0003,
+    READ_BUFFER_SIZE = 0x0005,
+    READ_BD_ADDR = 0x0009,
+)
 
 read_local_version_rp = Struct("read_local_version_rp",
     ULInt8("status"),
@@ -85,6 +110,40 @@ read_bd_addr_rp = Struct("read_bd_addr_rp",
     Array(6, ULInt8("bdaddr")),
 )
 
+# Commands
+
+Opcode = Embedded(Struct("opcode",
+    ULInt16("opcode"),
+    Enum(Value("ogf", lambda ctx: ctx.opcode >> 10 & 0x3f),
+        LINK_CTL = 0x01,
+        LINK_POLICY = 0x02,
+        HOST_CTL = 0x03,
+        INFO_PARAM = 0x04,
+        STATUS_PARAM = 0x05,
+        LE_CTL = 0x08,
+    ),
+    Switch("ocf", lambda ctx: ctx.ogf,
+        {
+            "HOST_CTL": host_ctl_commands,
+            "INFO_PARAM": info_param_commands,
+        }
+    ),
+))
+
+command = Struct("command",
+    Opcode,
+    ULInt8("plen"),
+    If(lambda ctx: ctx.plen > 0,
+        Switch("pdata", lambda ctx: ctx.ocf,
+            {
+                # Controller & Baseband (OGF 0x03)
+                "SET_EVENT_FLT": set_event_flt_cp,
+            }
+        ),
+    ),
+    Terminator,
+)
+
 # Events
 
 evt_cmd_complete = Struct("evt_cmd_complete",
@@ -93,6 +152,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
     Switch("rparams", lambda ctx: ctx.ocf,
         {
             # Controller & Baseband (OGF 0x03)
+            "SET_EVENT_FLT": set_event_flt_rp,
             "READ_LOCAL_NAME": read_local_name_rp,
             "READ_CLASS_OF_DEV": read_class_of_dev_rp,
             "READ_VOICE_SETTING": read_voice_setting_rp,

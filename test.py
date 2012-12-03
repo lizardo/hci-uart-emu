@@ -49,3 +49,13 @@ def test():
     assert d.packet.ogf == "HOST_CTL"
     assert d.packet.ocf == "READ_CLASS_OF_DEV"
     assert d.packet.plen == 0
+
+    # HCI Command: Set Event Filter (0x03|0x0005) plen 1
+    #     type 0 condition 0
+    #     Clear all filters
+    d = uart.parse("01 05 0C 01 00".replace(" ","").decode("hex"))
+    assert d.packet_indicator == "COMMAND"
+    assert d.packet.ogf == "HOST_CTL"
+    assert d.packet.ocf == "SET_EVENT_FLT"
+    assert d.packet.plen == 1
+    assert d.packet.pdata.flt_type == "CLEAR_ALL"
