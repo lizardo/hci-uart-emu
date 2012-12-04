@@ -4,6 +4,7 @@ from construct import *
 
 host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     SET_EVENT_FLT = 0x0005,
+    DELETE_STORED_LINK_KEY = 0x0012,
     READ_LOCAL_NAME = 0x0014,
     WRITE_CONN_ACCEPT_TIMEOUT = 0x0016,
     READ_CLASS_OF_DEV = 0x0023,
@@ -58,6 +59,16 @@ set_event_flt_cp = Struct("set_event_flt_cp",
 
 set_event_flt_rp = Struct("set_event_flt_rp",
     ULInt8("status"),
+)
+
+delete_stored_link_key_cp = Struct("delete_stored_link_key_cp",
+    Array(6, ULInt8("bdaddr")),
+    ULInt8("delete_all"),
+)
+
+delete_stored_link_key_rp = Struct("delete_stored_link_key_rp",
+    ULInt8("status"),
+    ULInt16("num_keys"),
 )
 
 read_local_name_rp = Struct("read_local_name_rp",
@@ -147,6 +158,7 @@ command = Struct("command",
             {
                 # Controller & Baseband (OGF 0x03)
                 "SET_EVENT_FLT": set_event_flt_cp,
+                "DELETE_STORED_LINK_KEY": delete_stored_link_key_cp,
                 "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_cp,
             }
         ),
@@ -163,6 +175,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
         {
             # Controller & Baseband (OGF 0x03)
             "SET_EVENT_FLT": set_event_flt_rp,
+            "DELETE_STORED_LINK_KEY": delete_stored_link_key_rp,
             "READ_LOCAL_NAME": read_local_name_rp,
             "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_rp,
             "READ_CLASS_OF_DEV": read_class_of_dev_rp,

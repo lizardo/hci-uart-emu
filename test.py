@@ -68,3 +68,22 @@ def test():
     assert d.packet.ocf == "WRITE_CONN_ACCEPT_TIMEOUT"
     assert d.packet.plen == 2
     assert d.packet.pdata.timeout == 32000
+
+    # HCI Command: Delete Stored Link Key (0x03|0x0012) plen 7
+    #     bdaddr 00:00:00:00:00:00 all 1
+    d = uart.parse("01 12 0C 07 00 00 00 00 00 00 01".replace(" ","").decode("hex"))
+    assert d.packet_indicator == "COMMAND"
+    assert d.packet.ogf == "HOST_CTL"
+    assert d.packet.ocf == "DELETE_STORED_LINK_KEY"
+    assert d.packet.plen == 7
+    assert d.packet.pdata.bdaddr == [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    assert d.packet.pdata.delete_all == 0x01
+
+    # HCI Event: Command Complete (0x0e) plen 6
+    #     Delete Stored Link Key (0x03|0x0012) ncmd 1
+    #     status 0x00 deleted 0
+    d = uart.parse("04 0E 06 01 12 0C 00 00 00".replace(" ","").decode("hex"))
+    assert d.packet_indicator == "EVENT"
+    assert d.packet.plen == 6
+    assert d.packet.pdata.rparams.status == 0x00
+    assert d.packet.pdata.rparams.num_keys == 0x0000
