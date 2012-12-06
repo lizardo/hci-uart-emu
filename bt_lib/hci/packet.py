@@ -12,6 +12,7 @@ host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     READ_VOICE_SETTING = 0x0025,
     WRITE_INQUIRY_MODE = 0x0045,
     WRITE_SIMPLE_PAIRING_MODE = 0x0056,
+    READ_INQ_RESPONSE_TX_POWER_LEVEL = 0x0058,
 )
 
 set_event_mask_cp = Struct("set_event_mask_cp",
@@ -119,6 +120,11 @@ write_simple_pairing_mode_cp = Struct("write_simple_pairing_mode_cp",
 
 write_simple_pairing_mode_rp = Struct("write_simple_pairing_mode_rp",
     ULInt8("status"),
+)
+
+read_inq_response_tx_power_level_rp = Struct("read_inq_response_tx_power_level_rp",
+    ULInt8("status"),
+    SLInt8("level"),
 )
 
 # Informational Parameters (OGF 0x04)
@@ -249,6 +255,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
             "READ_VOICE_SETTING": read_voice_setting_rp,
             "WRITE_INQUIRY_MODE": write_inquiry_mode_rp,
             "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_rp,
+            "READ_INQ_RESPONSE_TX_POWER_LEVEL": read_inq_response_tx_power_level_rp,
             # Informational Parameters (OGF 0x04)
             "READ_LOCAL_VERSION": read_local_version_rp,
             "READ_LOCAL_COMMANDS": read_local_commands_rp,
