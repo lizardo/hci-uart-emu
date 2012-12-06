@@ -3,12 +3,22 @@ from construct import *
 # Controller & Baseband (OGF 0x03)
 
 host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+    SET_EVENT_MASK = 0x0001,
     SET_EVENT_FLT = 0x0005,
     DELETE_STORED_LINK_KEY = 0x0012,
     READ_LOCAL_NAME = 0x0014,
     WRITE_CONN_ACCEPT_TIMEOUT = 0x0016,
     READ_CLASS_OF_DEV = 0x0023,
     READ_VOICE_SETTING = 0x0025,
+    WRITE_SIMPLE_PAIRING_MODE = 0x0056,
+)
+
+set_event_mask_cp = Struct("set_event_mask_cp",
+    Array(8, ULInt8("mask")),
+)
+
+set_event_mask_rp = Struct("set_event_mask_rp",
+    ULInt8("status"),
 )
 
 set_event_flt_cp = Struct("set_event_flt_cp",
@@ -94,10 +104,19 @@ read_voice_setting_rp = Struct("read_voice_setting_rp",
     ULInt16("voice_setting"),
 )
 
+write_simple_pairing_mode_cp = Struct("write_simple_pairing_mode_cp",
+    ULInt8("mode"),
+)
+
+write_simple_pairing_mode_rp = Struct("write_simple_pairing_mode_rp",
+    ULInt8("status"),
+)
+
 # Informational Parameters (OGF 0x04)
 
 info_param_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     READ_LOCAL_VERSION = 0x0001,
+    READ_LOCAL_COMMANDS = 0x0002,
     READ_LOCAL_FEATURES = 0x0003,
     READ_BUFFER_SIZE = 0x0005,
     READ_BD_ADDR = 0x0009,
@@ -110,6 +129,11 @@ read_local_version_rp = Struct("read_local_version_rp",
     ULInt8("lmp_ver"),
     ULInt16("manufacturer"),
     ULInt16("lmp_subver"),
+)
+
+read_local_commands_rp = Struct("read_local_commands_rp",
+    ULInt8("status"),
+    Array(64, ULInt8("commands")),
 )
 
 read_local_features_rp = Struct("read_local_features_rp",
@@ -133,13 +157,28 @@ read_bd_addr_rp = Struct("read_bd_addr_rp",
 # LE Controller (OGF 0x08)
 
 le_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+    LE_SET_EVENT_MASK = 0x0001,
     LE_READ_BUFFER_SIZE = 0x0002,
+    LE_READ_ADVERTISING_CHANNEL_TX_POWER = 0x0007,
+)
+
+le_set_event_mask_cp = Struct("le_set_event_mask_cp",
+    Array(8, ULInt8("mask")),
+)
+
+le_set_event_mask_rp = Struct("le_set_event_mask_rp",
+    ULInt8("status"),
 )
 
 le_read_buffer_size_rp = Struct("le_read_buffer_size_rp",
     ULInt8("status"),
     ULInt16("pkt_len"),
     ULInt8("max_pkt"),
+)
+
+le_read_advertising_channel_tx_power_rp = Struct("le_read_advertising_channel_tx_power_rp",
+    ULInt8("status"),
+    SLInt8("level"),
 )
 
 # Commands
@@ -170,9 +209,13 @@ command = Struct("command",
         Switch("pdata", lambda ctx: ctx.ocf,
             {
                 # Controller & Baseband (OGF 0x03)
+                "SET_EVENT_MASK": set_event_mask_cp,
                 "SET_EVENT_FLT": set_event_flt_cp,
                 "DELETE_STORED_LINK_KEY": delete_stored_link_key_cp,
                 "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_cp,
+                "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_cp,
+                # LE Controller (OGF 0x08)
+                "LE_SET_EVENT_MASK": le_set_event_mask_cp,
             }
         ),
     ),
@@ -187,19 +230,24 @@ evt_cmd_complete = Struct("evt_cmd_complete",
     Switch("rparams", lambda ctx: ctx.ocf,
         {
             # Controller & Baseband (OGF 0x03)
+            "SET_EVENT_MASK": set_event_mask_rp,
             "SET_EVENT_FLT": set_event_flt_rp,
             "DELETE_STORED_LINK_KEY": delete_stored_link_key_rp,
             "READ_LOCAL_NAME": read_local_name_rp,
             "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_rp,
             "READ_CLASS_OF_DEV": read_class_of_dev_rp,
             "READ_VOICE_SETTING": read_voice_setting_rp,
+            "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_rp,
             # Informational Parameters (OGF 0x04)
             "READ_LOCAL_VERSION": read_local_version_rp,
+            "READ_LOCAL_COMMANDS": read_local_commands_rp,
             "READ_LOCAL_FEATURES": read_local_features_rp,
             "READ_BUFFER_SIZE": read_buffer_size_rp,
             "READ_BD_ADDR": read_bd_addr_rp,
             # LE Controller (OGF 0x08)
+            "LE_SET_EVENT_MASK": le_set_event_mask_rp,
             "LE_READ_BUFFER_SIZE": le_read_buffer_size_rp,
+            "LE_READ_ADVERTISING_CHANNEL_TX_POWER": le_read_advertising_channel_tx_power_rp,
         }
     ),
 )
