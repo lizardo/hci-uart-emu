@@ -4,6 +4,7 @@ from construct import *
 
 host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     SET_EVENT_MASK = 0x0001,
+    RESET = 0x0003,
     SET_EVENT_FLT = 0x0005,
     DELETE_STORED_LINK_KEY = 0x0012,
     CHANGE_LOCAL_NAME = 0x0013,
@@ -25,6 +26,10 @@ set_event_mask_cp = Struct("set_event_mask_cp",
 )
 
 set_event_mask_rp = Struct("set_event_mask_rp",
+    ULInt8("status"),
+)
+
+reset_rp = Struct("reset_rp",
     ULInt8("status"),
 )
 
@@ -324,6 +329,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
         {
             # Controller & Baseband (OGF 0x03)
             "SET_EVENT_MASK": set_event_mask_rp,
+            "RESET": reset_rp,
             "SET_EVENT_FLT": set_event_flt_rp,
             "DELETE_STORED_LINK_KEY": delete_stored_link_key_rp,
             "CHANGE_LOCAL_NAME": change_local_name_rp,
