@@ -13,6 +13,7 @@ host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     WRITE_INQUIRY_MODE = 0x0045,
     WRITE_SIMPLE_PAIRING_MODE = 0x0056,
     READ_INQ_RESPONSE_TX_POWER_LEVEL = 0x0058,
+    WRITE_LE_HOST_SUPPORTED = 0x006d,
 )
 
 set_event_mask_cp = Struct("set_event_mask_cp",
@@ -125,6 +126,15 @@ write_simple_pairing_mode_rp = Struct("write_simple_pairing_mode_rp",
 read_inq_response_tx_power_level_rp = Struct("read_inq_response_tx_power_level_rp",
     ULInt8("status"),
     SLInt8("level"),
+)
+
+write_le_host_supported_cp = Struct("write_le_host_supported_cp",
+    ULInt8("le"),
+    ULInt8("simul"),
+)
+
+write_le_host_supported_rp = Struct("write_le_host_supported_rp",
+    ULInt8("status"),
 )
 
 # Informational Parameters (OGF 0x04)
@@ -242,6 +252,7 @@ command = Struct("command",
                 "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_cp,
                 "WRITE_INQUIRY_MODE": write_inquiry_mode_cp,
                 "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_cp,
+                "WRITE_LE_HOST_SUPPORTED": write_le_host_supported_cp,
                 # Informational Parameters (OGF 0x04)
                 "READ_LOCAL_EXT_FEATURES": read_local_ext_features_cp,
                 # LE Controller (OGF 0x08)
@@ -270,6 +281,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
             "WRITE_INQUIRY_MODE": write_inquiry_mode_rp,
             "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_rp,
             "READ_INQ_RESPONSE_TX_POWER_LEVEL": read_inq_response_tx_power_level_rp,
+            "WRITE_LE_HOST_SUPPORTED": write_le_host_supported_rp,
             # Informational Parameters (OGF 0x04)
             "READ_LOCAL_VERSION": read_local_version_rp,
             "READ_LOCAL_COMMANDS": read_local_commands_rp,
