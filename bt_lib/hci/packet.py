@@ -130,6 +130,18 @@ read_bd_addr_rp = Struct("read_bd_addr_rp",
     Array(6, ULInt8("bdaddr")),
 )
 
+# LE Controller (OGF 0x08)
+
+le_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+    LE_READ_BUFFER_SIZE = 0x0002,
+)
+
+le_read_buffer_size_rp = Struct("le_read_buffer_size_rp",
+    ULInt8("status"),
+    ULInt16("pkt_len"),
+    ULInt8("max_pkt"),
+)
+
 # Commands
 
 Opcode = Embedded(Struct("opcode",
@@ -146,6 +158,7 @@ Opcode = Embedded(Struct("opcode",
         {
             "HOST_CTL": host_ctl_commands,
             "INFO_PARAM": info_param_commands,
+            "LE_CTL": le_ctl_commands,
         }
     ),
 ))
@@ -185,6 +198,8 @@ evt_cmd_complete = Struct("evt_cmd_complete",
             "READ_LOCAL_FEATURES": read_local_features_rp,
             "READ_BUFFER_SIZE": read_buffer_size_rp,
             "READ_BD_ADDR": read_bd_addr_rp,
+            # LE Controller (OGF 0x08)
+            "LE_READ_BUFFER_SIZE": le_read_buffer_size_rp,
         }
     ),
 )
