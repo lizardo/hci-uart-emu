@@ -10,6 +10,7 @@ host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     WRITE_CONN_ACCEPT_TIMEOUT = 0x0016,
     READ_CLASS_OF_DEV = 0x0023,
     READ_VOICE_SETTING = 0x0025,
+    WRITE_INQUIRY_MODE = 0x0045,
     WRITE_SIMPLE_PAIRING_MODE = 0x0056,
 )
 
@@ -102,6 +103,14 @@ read_class_of_dev_rp = Struct("read_class_of_dev_rp",
 read_voice_setting_rp = Struct("read_voice_setting_rp",
     ULInt8("status"),
     ULInt16("voice_setting"),
+)
+
+write_inquiry_mode_cp = Struct("write_inquiry_mode_cp",
+    ULInt8("mode"),
+)
+
+write_inquiry_mode_rp = Struct("write_inquiry_mode_rp",
+    ULInt8("status"),
 )
 
 write_simple_pairing_mode_cp = Struct("write_simple_pairing_mode_cp",
@@ -213,6 +222,7 @@ command = Struct("command",
                 "SET_EVENT_FLT": set_event_flt_cp,
                 "DELETE_STORED_LINK_KEY": delete_stored_link_key_cp,
                 "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_cp,
+                "WRITE_INQUIRY_MODE": write_inquiry_mode_cp,
                 "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_cp,
                 # LE Controller (OGF 0x08)
                 "LE_SET_EVENT_MASK": le_set_event_mask_cp,
@@ -237,6 +247,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
             "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_rp,
             "READ_CLASS_OF_DEV": read_class_of_dev_rp,
             "READ_VOICE_SETTING": read_voice_setting_rp,
+            "WRITE_INQUIRY_MODE": write_inquiry_mode_rp,
             "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_rp,
             # Informational Parameters (OGF 0x04)
             "READ_LOCAL_VERSION": read_local_version_rp,
