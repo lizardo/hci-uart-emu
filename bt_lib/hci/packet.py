@@ -133,6 +133,7 @@ info_param_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     READ_LOCAL_VERSION = 0x0001,
     READ_LOCAL_COMMANDS = 0x0002,
     READ_LOCAL_FEATURES = 0x0003,
+    READ_LOCAL_EXT_FEATURES = 0x0004,
     READ_BUFFER_SIZE = 0x0005,
     READ_BD_ADDR = 0x0009,
 )
@@ -153,6 +154,17 @@ read_local_commands_rp = Struct("read_local_commands_rp",
 
 read_local_features_rp = Struct("read_local_features_rp",
     ULInt8("status"),
+    Array(8, ULInt8("features")),
+)
+
+read_local_ext_features_cp = Struct("read_local_ext_features_cp",
+    ULInt8("page_num"),
+)
+
+read_local_ext_features_rp = Struct("read_local_ext_features_rp",
+    ULInt8("status"),
+    ULInt8("page_num"),
+    ULInt8("max_page_num"),
     Array(8, ULInt8("features")),
 )
 
@@ -230,6 +242,8 @@ command = Struct("command",
                 "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_cp,
                 "WRITE_INQUIRY_MODE": write_inquiry_mode_cp,
                 "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_cp,
+                # Informational Parameters (OGF 0x04)
+                "READ_LOCAL_EXT_FEATURES": read_local_ext_features_cp,
                 # LE Controller (OGF 0x08)
                 "LE_SET_EVENT_MASK": le_set_event_mask_cp,
             }
@@ -260,6 +274,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
             "READ_LOCAL_VERSION": read_local_version_rp,
             "READ_LOCAL_COMMANDS": read_local_commands_rp,
             "READ_LOCAL_FEATURES": read_local_features_rp,
+            "READ_LOCAL_EXT_FEATURES": read_local_ext_features_rp,
             "READ_BUFFER_SIZE": read_buffer_size_rp,
             "READ_BD_ADDR": read_bd_addr_rp,
             # LE Controller (OGF 0x08)
