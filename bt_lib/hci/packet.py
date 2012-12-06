@@ -8,6 +8,7 @@ host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     DELETE_STORED_LINK_KEY = 0x0012,
     READ_LOCAL_NAME = 0x0014,
     WRITE_CONN_ACCEPT_TIMEOUT = 0x0016,
+    WRITE_SCAN_ENABLE = 0x001a,
     READ_CLASS_OF_DEV = 0x0023,
     READ_VOICE_SETTING = 0x0025,
     WRITE_INQUIRY_MODE = 0x0045,
@@ -94,6 +95,14 @@ write_conn_accept_timeout_cp = Struct("write_conn_accept_timeout_cp",
 )
 
 write_conn_accept_timeout_rp = Struct("write_conn_accept_timeout_rp",
+    ULInt8("status"),
+)
+
+write_scan_enable_cp = Struct("write_scan_enable_cp",
+    ULInt8("enable"),
+)
+
+write_scan_enable_rp = Struct("write_scan_enable_rp",
     ULInt8("status"),
 )
 
@@ -260,6 +269,7 @@ command = Struct("command",
                 "SET_EVENT_FLT": set_event_flt_cp,
                 "DELETE_STORED_LINK_KEY": delete_stored_link_key_cp,
                 "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_cp,
+                "WRITE_SCAN_ENABLE": write_scan_enable_cp,
                 "WRITE_INQUIRY_MODE": write_inquiry_mode_cp,
                 "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_cp,
                 "WRITE_LE_HOST_SUPPORTED": write_le_host_supported_cp,
@@ -287,6 +297,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
             "DELETE_STORED_LINK_KEY": delete_stored_link_key_rp,
             "READ_LOCAL_NAME": read_local_name_rp,
             "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_rp,
+            "WRITE_SCAN_ENABLE": write_scan_enable_rp,
             "READ_CLASS_OF_DEV": read_class_of_dev_rp,
             "READ_VOICE_SETTING": read_voice_setting_rp,
             "WRITE_INQUIRY_MODE": write_inquiry_mode_rp,
