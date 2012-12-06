@@ -14,6 +14,7 @@ host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
     WRITE_CLASS_OF_DEV = 0x0024,
     READ_VOICE_SETTING = 0x0025,
     WRITE_INQUIRY_MODE = 0x0045,
+    WRITE_EXT_INQUIRY_RESPONSE = 0x0052,
     WRITE_SIMPLE_PAIRING_MODE = 0x0056,
     READ_INQ_RESPONSE_TX_POWER_LEVEL = 0x0058,
     WRITE_LE_HOST_SUPPORTED = 0x006d,
@@ -139,6 +140,15 @@ write_inquiry_mode_cp = Struct("write_inquiry_mode_cp",
 )
 
 write_inquiry_mode_rp = Struct("write_inquiry_mode_rp",
+    ULInt8("status"),
+)
+
+write_ext_inquiry_response_cp = Struct("write_ext_inquiry_response_cp",
+    ULInt8("fec"),
+    Array(248, ULInt8("data")),
+)
+
+write_ext_inquiry_response_rp = Struct("write_ext_inquiry_response_rp",
     ULInt8("status"),
 )
 
@@ -291,6 +301,7 @@ command = Struct("command",
                 "WRITE_SCAN_ENABLE": write_scan_enable_cp,
                 "WRITE_CLASS_OF_DEV": write_class_of_dev_cp,
                 "WRITE_INQUIRY_MODE": write_inquiry_mode_cp,
+                "WRITE_EXT_INQUIRY_RESPONSE": write_ext_inquiry_response_cp,
                 "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_cp,
                 "WRITE_LE_HOST_SUPPORTED": write_le_host_supported_cp,
                 # Informational Parameters (OGF 0x04)
@@ -323,6 +334,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
             "WRITE_CLASS_OF_DEV": write_class_of_dev_rp,
             "READ_VOICE_SETTING": read_voice_setting_rp,
             "WRITE_INQUIRY_MODE": write_inquiry_mode_rp,
+            "WRITE_EXT_INQUIRY_RESPONSE": write_ext_inquiry_response_rp,
             "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_rp,
             "READ_INQ_RESPONSE_TX_POWER_LEVEL": read_inq_response_tx_power_level_rp,
             "WRITE_LE_HOST_SUPPORTED": write_le_host_supported_rp,
