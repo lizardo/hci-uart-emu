@@ -2,7 +2,7 @@ from construct import *
 
 # Controller & Baseband (OGF 0x03)
 
-host_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+host_ctl_commands = Enum(BitField("ocf", 10),
     SET_EVENT_MASK = 0x0001,
     RESET = 0x0003,
     SET_EVENT_FLT = 0x0005,
@@ -181,7 +181,7 @@ write_le_host_supported_rp = Struct("write_le_host_supported_rp",
 
 # Informational Parameters (OGF 0x04)
 
-info_param_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+info_param_commands = Enum(BitField("ocf", 10),
     READ_LOCAL_VERSION = 0x0001,
     READ_LOCAL_COMMANDS = 0x0002,
     READ_LOCAL_FEATURES = 0x0003,
@@ -235,7 +235,7 @@ read_bd_addr_rp = Struct("read_bd_addr_rp",
 
 # LE Controller (OGF 0x08)
 
-le_ctl_commands = Enum(Value("ocf", lambda ctx: ctx.opcode & 0x3ff),
+le_ctl_commands = Enum(BitField("ocf", 10),
     LE_SET_EVENT_MASK = 0x0001,
     LE_READ_BUFFER_SIZE = 0x0002,
     LE_READ_ADVERTISING_CHANNEL_TX_POWER = 0x0007,
@@ -272,30 +272,39 @@ le_set_advertising_data_rp = Struct("le_set_advertising_data_rp",
 
 # Commands
 
-Opcode = Embedded(Struct("opcode",
-    ULInt16("opcode"),
-    Enum(Value("ogf", lambda ctx: ctx.opcode >> 10 & 0x3f),
-        LINK_CTL = 0x01,
-        LINK_POLICY = 0x02,
-        HOST_CTL = 0x03,
-        INFO_PARAM = 0x04,
-        STATUS_PARAM = 0x05,
-        LE_CTL = 0x08,
-    ),
-    Switch("ocf", lambda ctx: ctx.ogf,
-        {
-            "HOST_CTL": host_ctl_commands,
-            "INFO_PARAM": info_param_commands,
-            "LE_CTL": le_ctl_commands,
-        }
-    ),
-))
+class SwapAdapter(Adapter):
+    def _encode(self, obj, context):
+        return "".join(reversed(obj))
+
+    def _decode(self, obj, context):
+        return "".join(reversed(obj))
+
+Opcode = TunnelAdapter(
+    SwapAdapter(Bytes("opcode", 2)),
+    EmbeddedBitStruct(
+        Enum(BitField("ogf", 6),
+            LINK_CTL = 0x01,
+            LINK_POLICY = 0x02,
+            HOST_CTL = 0x03,
+            INFO_PARAM = 0x04,
+            STATUS_PARAM = 0x05,
+            LE_CTL = 0x08,
+        ),
+        Switch("ocf", lambda ctx: ctx.ogf,
+            {
+                "HOST_CTL": host_ctl_commands,
+                "INFO_PARAM": info_param_commands,
+                "LE_CTL": le_ctl_commands,
+            }
+        ),
+    )
+)
 
 command = Struct("command",
     Opcode,
     ULInt8("plen"),
     If(lambda ctx: ctx.plen > 0,
-        Switch("pdata", lambda ctx: ctx.ocf,
+        Switch("pdata", lambda ctx: ctx.opcode.ocf,
             {
                 # Controller & Baseband (OGF 0x03)
                 "SET_EVENT_MASK": set_event_mask_cp,
@@ -325,7 +334,7 @@ command = Struct("command",
 evt_cmd_complete = Struct("evt_cmd_complete",
     ULInt8("ncmd"),
     Opcode,
-    Switch("rparams", lambda ctx: ctx.ocf,
+    Switch("rparams", lambda ctx: ctx.opcode.ocf,
         {
             # Controller & Baseband (OGF 0x03)
             "SET_EVENT_MASK": set_event_mask_rp,

@@ -4,8 +4,8 @@ def test():
     #HCI Command: Read Local Supported Features (0x04|0x0003) plen 0
     d = uart.parse("01031000".decode("hex"))
     assert d.packet_indicator == "COMMAND"
-    assert d.packet.ogf == "INFO_PARAM"
-    assert d.packet.ocf == "READ_LOCAL_FEATURES"
+    assert d.packet.opcode.ogf == "INFO_PARAM"
+    assert d.packet.opcode.ocf == "READ_LOCAL_FEATURES"
     assert d.packet.plen == 0
 
     # HCI Event: Command Complete (0x0e) plen 12
@@ -46,8 +46,8 @@ def test():
     # HCI Command: Read Class of Device (0x03|0x0023) plen 0
     d = uart.parse("01 23 0C 00".replace(" ","").decode("hex"))
     assert d.packet_indicator == "COMMAND"
-    assert d.packet.ogf == "HOST_CTL"
-    assert d.packet.ocf == "READ_CLASS_OF_DEV"
+    assert d.packet.opcode.ogf == "HOST_CTL"
+    assert d.packet.opcode.ocf == "READ_CLASS_OF_DEV"
     assert d.packet.plen == 0
 
     # HCI Command: Set Event Filter (0x03|0x0005) plen 1
@@ -55,8 +55,8 @@ def test():
     #     Clear all filters
     d = uart.parse("01 05 0C 01 00".replace(" ","").decode("hex"))
     assert d.packet_indicator == "COMMAND"
-    assert d.packet.ogf == "HOST_CTL"
-    assert d.packet.ocf == "SET_EVENT_FLT"
+    assert d.packet.opcode.ogf == "HOST_CTL"
+    assert d.packet.opcode.ocf == "SET_EVENT_FLT"
     assert d.packet.plen == 1
     assert d.packet.pdata.flt_type == "CLEAR_ALL"
 
@@ -64,8 +64,8 @@ def test():
     #     timeout 32000
     d = uart.parse("01 16 0C 02 00 7D".replace(" ","").decode("hex"))
     assert d.packet_indicator == "COMMAND"
-    assert d.packet.ogf == "HOST_CTL"
-    assert d.packet.ocf == "WRITE_CONN_ACCEPT_TIMEOUT"
+    assert d.packet.opcode.ogf == "HOST_CTL"
+    assert d.packet.opcode.ocf == "WRITE_CONN_ACCEPT_TIMEOUT"
     assert d.packet.plen == 2
     assert d.packet.pdata.timeout == 32000
 
@@ -73,8 +73,8 @@ def test():
     #     bdaddr 00:00:00:00:00:00 all 1
     d = uart.parse("01 12 0C 07 00 00 00 00 00 00 01".replace(" ","").decode("hex"))
     assert d.packet_indicator == "COMMAND"
-    assert d.packet.ogf == "HOST_CTL"
-    assert d.packet.ocf == "DELETE_STORED_LINK_KEY"
+    assert d.packet.opcode.ogf == "HOST_CTL"
+    assert d.packet.opcode.ocf == "DELETE_STORED_LINK_KEY"
     assert d.packet.plen == 7
     assert d.packet.pdata.bdaddr == [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     assert d.packet.pdata.delete_all == 0x01
