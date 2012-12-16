@@ -98,6 +98,20 @@ class DummyBT(asynchat.async_chat):
                         )
                     )
                 )
+        elif ocf == "READ_LOCAL_NAME":
+            c = Container(
+                packet_indicator = 'EVENT',
+                packet = Container(
+                    evt = 'CMD_COMPLETE',
+                    params = Container(
+                        opcode = d.packet.opcode,
+                        ncmd = 1,
+                        rparams = Container(
+                            status = 0,
+                            name = "test"),
+                        )
+                    )
+                )
         else:
             raise NotImplementedError, "Unsupported packet: %s" % d
 
