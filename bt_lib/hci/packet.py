@@ -322,10 +322,15 @@ class PLenAdapter(Adapter):
         if obj is None:
             return 0
 
-        c = Container(opcode = ctx.opcode)
-        if ctx.opcode.ocf == "SET_EVENT_FLT":
-            # This command requires checking some fields
-            c.update(obj)
+        c = Container()
+        if ctx.get("opcode"):
+            c.opcode = ctx.opcode
+            if ctx.opcode.ocf == "SET_EVENT_FLT":
+                # This command requires checking some fields
+                c.update(obj)
+        if ctx.get("evt"):
+            c.evt = ctx.evt
+            c.opcode = obj.opcode
 
         return self.subcon.sizeof(c) - 1
 
@@ -374,7 +379,7 @@ command = Struct("command",
 evt_cmd_complete = Struct("evt_cmd_complete",
     ULInt8("ncmd"),
     Opcode,
-    Switch("rparams", lambda ctx: ctx.opcode.ocf,
+    _Switch("rparams", lambda ctx: ctx.opcode.ocf,
         {
             # Controller & Baseband (OGF 0x03)
             "SET_EVENT_MASK": set_event_mask_rp,
@@ -413,11 +418,13 @@ event = Struct("event",
     Enum(ULInt8("evt"),
         CMD_COMPLETE = 0x0e,
     ),
-    ULInt8("plen"),
-    Switch("pdata", lambda ctx: ctx.evt,
-        {
-            "CMD_COMPLETE": evt_cmd_complete,
-        }
-    ),
+    PLenAdapter(Sequence("params",
+        ULInt8("plen"),
+        Switch("pdata", lambda ctx: ctx._.evt,
+            {
+                "CMD_COMPLETE": evt_cmd_complete,
+            }
+        ),
+    )),
     Terminator,
 )

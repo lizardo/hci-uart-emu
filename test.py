@@ -28,8 +28,7 @@ def test2():
         packet_indicator = 'EVENT',
         packet = Container(
             evt = 'CMD_COMPLETE',
-            plen = 12,
-            pdata = Container(
+            params = Container(
                 ncmd = 1,
                 rparams = Container(
                     status = 0,
@@ -55,8 +54,7 @@ def test3():
         packet_indicator = 'EVENT',
         packet = Container(
             evt = 'CMD_COMPLETE',
-            plen = 12,
-            pdata = Container(
+            params = Container(
                 ncmd = 1,
                 rparams = Container(
                     status = 0,
@@ -83,8 +81,7 @@ def test4():
         packet_indicator = 'EVENT',
         packet = Container(
             evt = 'CMD_COMPLETE',
-            plen = 10,
-            pdata = Container(
+            params = Container(
                 ncmd = 1,
                 rparams = Container(
                     status = 0,
@@ -175,9 +172,8 @@ def test9():
     c = Container(
         packet_indicator = 'EVENT',
         packet = Container(
-            plen = 6,
             evt = 'CMD_COMPLETE',
-            pdata = Container(
+            params = Container(
                 ncmd = 1,
                 rparams = Container(
                     status = 0,
