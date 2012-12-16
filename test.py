@@ -13,8 +13,7 @@ def test1():
             opcode = Container(
                 ogf = 'INFO_PARAM',
                 ocf = 'READ_LOCAL_FEATURES'),
-            plen = 0,
-            pdata = None)
+            params = None)
         )
     assert uart.parse(b) == c
     assert uart.build(c) == b
@@ -108,8 +107,7 @@ def test5():
             opcode = Container(
                 ogf = 'HOST_CTL',
                 ocf = 'READ_CLASS_OF_DEV'),
-            plen = 0,
-            pdata = None)
+            params = None)
         )
     assert uart.parse(b) == c
     assert uart.build(c) == b
@@ -125,8 +123,7 @@ def test6():
             opcode = Container(
                 ogf = 'HOST_CTL',
                 ocf = 'SET_EVENT_FLT'),
-            plen = 1,
-            pdata = Container(
+            params = Container(
                 condition = None,
                 flt_type = 'CLEAR_ALL',
                 cond_type = None)
@@ -145,8 +142,7 @@ def test7():
             opcode = Container(
                 ogf = 'HOST_CTL',
                 ocf = 'WRITE_CONN_ACCEPT_TIMEOUT'),
-            plen = 2,
-            pdata = Container(
+            params = Container(
                 timeout = 32000)
             )
         )
@@ -163,8 +159,7 @@ def test8():
             opcode = Container(
                 ogf = 'HOST_CTL',
                 ocf = 'DELETE_STORED_LINK_KEY'),
-            plen = 7,
-            pdata = Container(
+            params = Container(
                 bdaddr = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
                 delete_all = 1)
             )

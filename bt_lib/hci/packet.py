@@ -33,13 +33,29 @@ reset_rp = Struct("reset_rp",
     ULInt8("status"),
 )
 
+# FIXME: Without this hack, context inside If/Switch is incorrectly placed
+# inside "_" (just for sizeof())
+class _Switch(Switch):
+    def _sizeof(self, ctx):
+        while ctx.get("_"):
+            ctx = ctx._
+        return Switch._sizeof(self, ctx)
+
+def _If(predicate, subcon):
+    return _Switch(subcon.name, lambda ctx: bool(predicate(ctx)),
+        {
+            True: subcon,
+            False: Pass,
+        }
+    )
+
 set_event_flt_cp = Struct("set_event_flt_cp",
     Enum(ULInt8("flt_type"),
         CLEAR_ALL = 0x00,
         INQ_RESULT = 0x01,
         CONN_SETUP = 0x02,
     ),
-    If(lambda ctx: ctx.flt_type != "CLEAR_ALL",
+    _If(lambda ctx: ctx.flt_type != "CLEAR_ALL",
         Switch("cond_type", lambda ctx: ctx.flt_type,
             {
                 "INQ_RESULT": Enum(ULInt8("cond_type"),
@@ -55,7 +71,7 @@ set_event_flt_cp = Struct("set_event_flt_cp",
             }
         ),
     ),
-    If(lambda ctx: ctx.flt_type != "CLEAR_ALL",
+    _If(lambda ctx: ctx.flt_type != "CLEAR_ALL",
         Switch("condition", lambda ctx: ctx.cond_type,
             {
                 "RETURN_ALL": Pass,
@@ -300,32 +316,56 @@ Opcode = TunnelAdapter(
     )
 )
 
+# FIXME: Find better way to calculate plen
+class PLenAdapter(Adapter):
+    def get_plen(self, obj, ctx):
+        if obj is None:
+            return 0
+
+        c = Container(opcode = ctx.opcode)
+        if ctx.opcode.ocf == "SET_EVENT_FLT":
+            # This command requires checking some fields
+            c.update(obj)
+
+        return self.subcon.sizeof(c) - 1
+
+    def _encode(self, obj, ctx):
+        return (self.get_plen(obj, ctx), obj)
+
+    def _decode(self, obj, ctx):
+        assert self.get_plen(obj[1], ctx) == obj[0]
+
+        return obj[1]
+
 command = Struct("command",
     Opcode,
-    ULInt8("plen"),
-    If(lambda ctx: ctx.plen > 0,
-        Switch("pdata", lambda ctx: ctx.opcode.ocf,
+    PLenAdapter(Sequence("params",
+        ULInt8("plen"),
+        Switch("pdata", lambda ctx: ctx._.opcode.ocf,
             {
                 # Controller & Baseband (OGF 0x03)
                 "SET_EVENT_MASK": set_event_mask_cp,
+                "RESET": Pass,
                 "SET_EVENT_FLT": set_event_flt_cp,
                 "DELETE_STORED_LINK_KEY": delete_stored_link_key_cp,
                 "CHANGE_LOCAL_NAME": change_local_name_cp,
                 "WRITE_CONN_ACCEPT_TIMEOUT": write_conn_accept_timeout_cp,
                 "WRITE_SCAN_ENABLE": write_scan_enable_cp,
+                "READ_CLASS_OF_DEV": Pass,
                 "WRITE_CLASS_OF_DEV": write_class_of_dev_cp,
                 "WRITE_INQUIRY_MODE": write_inquiry_mode_cp,
                 "WRITE_EXT_INQUIRY_RESPONSE": write_ext_inquiry_response_cp,
                 "WRITE_SIMPLE_PAIRING_MODE": write_simple_pairing_mode_cp,
                 "WRITE_LE_HOST_SUPPORTED": write_le_host_supported_cp,
                 # Informational Parameters (OGF 0x04)
+                "READ_LOCAL_FEATURES": Pass,
                 "READ_LOCAL_EXT_FEATURES": read_local_ext_features_cp,
                 # LE Controller (OGF 0x08)
                 "LE_SET_EVENT_MASK": le_set_event_mask_cp,
                 "LE_SET_ADVERTISING_DATA": le_set_advertising_data_cp,
             }
         ),
-    ),
+    )),
     Terminator,
 )
 
