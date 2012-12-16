@@ -109,8 +109,10 @@ delete_stored_link_key_rp = Struct("delete_stored_link_key_rp",
     ULInt16("num_keys"),
 )
 
+HCI_MAX_NAME_LENGTH = 248
+
 change_local_name_cp = Struct("change_local_name_cp",
-    String("name", 248, padchar="\x00"),
+    String("name", HCI_MAX_NAME_LENGTH, padchar="\x00"),
 )
 
 change_local_name_rp = Struct("change_local_name_rp",
@@ -119,7 +121,7 @@ change_local_name_rp = Struct("change_local_name_rp",
 
 read_local_name_rp = Struct("read_local_name_rp",
     ULInt8("status"),
-    String("name", 248, padchar="\x00"),
+    String("name", HCI_MAX_NAME_LENGTH, padchar="\x00"),
 )
 
 write_conn_accept_timeout_cp = Struct("write_conn_accept_timeout_cp",
@@ -164,9 +166,11 @@ write_inquiry_mode_rp = Struct("write_inquiry_mode_rp",
     ULInt8("status"),
 )
 
+HCI_MAX_EIR_LENGTH = 240
+
 write_ext_inquiry_response_cp = Struct("write_ext_inquiry_response_cp",
     ULInt8("fec"),
-    Array(248, ULInt8("data")),
+    Array(HCI_MAX_EIR_LENGTH, ULInt8("data")),
 )
 
 write_ext_inquiry_response_rp = Struct("write_ext_inquiry_response_rp",
