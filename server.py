@@ -65,6 +65,63 @@ class DummyBT(asynchat.async_chat):
             c = cmd_complete(Container(status = 0,
                 name = "test",
             ))
+        elif ocf == "READ_VOICE_SETTING":
+            c = cmd_complete(Container(status = 0,
+                voice_setting = 0x0000,
+            ))
+        elif ocf == "SET_EVENT_FLT":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "WRITE_CONN_ACCEPT_TIMEOUT":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "DELETE_STORED_LINK_KEY":
+            c = cmd_complete(Container(status = 0,
+                num_keys = 0,
+            ))
+        elif ocf == "LE_READ_BUFFER_SIZE":
+            c = cmd_complete(Container(status = 0,
+                pkt_len = 0x00c0,
+                max_pkt = 0x01,
+            ))
+        elif ocf == "LE_READ_ADVERTISING_CHANNEL_TX_POWER":
+            c = cmd_complete(Container(status = 0,
+                level = 0,
+            ))
+        elif ocf == "SET_EVENT_MASK":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "LE_SET_EVENT_MASK":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "READ_LOCAL_COMMANDS":
+            c = cmd_complete(Container(status = 0,
+                commands = [0] * 64,
+            ))
+        elif ocf == "WRITE_SIMPLE_PAIRING_MODE":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "WRITE_INQUIRY_MODE":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "READ_INQ_RESPONSE_TX_POWER_LEVEL":
+            c = cmd_complete(Container(status = 0,
+                level = 0,
+            ))
+        elif ocf == "READ_LOCAL_EXT_FEATURES":
+            c = cmd_complete(Container(status = 0,
+                page_num = 1,
+                max_page_num = 1,
+                features = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+            ))
+        elif ocf == "WRITE_LE_HOST_SUPPORTED":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "LE_SET_ADVERTISING_DATA":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "WRITE_SCAN_ENABLE":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "WRITE_CLASS_OF_DEV":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "CHANGE_LOCAL_NAME":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "WRITE_EXT_INQUIRY_RESPONSE":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "RESET":
+            c = cmd_complete(Container(status = 0))
         else:
             raise NotImplementedError, "Unsupported packet: %s" % d
 
