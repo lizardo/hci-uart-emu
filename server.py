@@ -26,8 +26,7 @@ class DummyBT(asynchat.async_chat):
                 packet_indicator = 'EVENT',
                 packet = Container(
                     evt = 'CMD_COMPLETE',
-                    plen = 12,
-                    pdata = Container(
+                    params = Container(
                         opcode = d.packet.opcode,
                         ncmd = 1,
                         rparams = Container(
@@ -41,8 +40,7 @@ class DummyBT(asynchat.async_chat):
                 packet_indicator = 'EVENT',
                 packet = Container(
                     evt = 'CMD_COMPLETE',
-                    plen = 12,
-                    pdata = Container(
+                    params = Container(
                         opcode = d.packet.opcode,
                         ncmd = 1,
                         rparams = Container(
@@ -60,8 +58,7 @@ class DummyBT(asynchat.async_chat):
                 packet_indicator = 'EVENT',
                 packet = Container(
                     evt = 'CMD_COMPLETE',
-                    plen = 10,
-                    pdata = Container(
+                    params = Container(
                         opcode = d.packet.opcode,
                         ncmd = 1,
                         rparams = Container(
@@ -75,8 +72,7 @@ class DummyBT(asynchat.async_chat):
                 packet_indicator = 'EVENT',
                 packet = Container(
                     evt = 'CMD_COMPLETE',
-                    plen = 11,
-                    pdata = Container(
+                    params = Container(
                         opcode = d.packet.opcode,
                         ncmd = 1,
                         rparams = Container(
@@ -93,8 +89,7 @@ class DummyBT(asynchat.async_chat):
                 packet_indicator = 'EVENT',
                 packet = Container(
                     evt = 'CMD_COMPLETE',
-                    plen = 7,
-                    pdata = Container(
+                    params = Container(
                         opcode = d.packet.opcode,
                         ncmd = 1,
                         rparams = Container(
