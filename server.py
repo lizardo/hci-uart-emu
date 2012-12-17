@@ -145,6 +145,21 @@ class DummyBT(asynchat.async_chat):
             c.append(Container(
                 packet_indicator = "EVENT",
                 packet = Container(
+                    evt = "INQUIRY_RESULT",
+                    params = Container(
+                        num_rsp = 1,
+                        bdaddr = [0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca],
+                        pscan_rep_mode = 0,
+                        reserved1 = 0,
+                        reserved2 = 0,
+                        dev_class = [0, 0, 0],
+                        clock_offset = 0x0000,
+                    )
+                )
+            ))
+            c.append(Container(
+                packet_indicator = "EVENT",
+                packet = Container(
                     evt = "INQUIRY_COMPLETE",
                     params = Container(status = 0)
                 )
