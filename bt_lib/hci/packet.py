@@ -1,5 +1,17 @@
 from construct import *
 
+# Link Control (OGF 0x01)
+
+link_ctl_commands = Enum(BitField("ocf", 10),
+    INQUIRY = 0x0001,
+)
+
+inquiry_cp = Struct("inquiry_cp",
+    Array(3, ULInt8("lap")),
+    ULInt8("length"),
+    ULInt8("num_rsp"),
+)
+
 # Controller & Baseband (OGF 0x03)
 
 host_ctl_commands = Enum(BitField("ocf", 10),
@@ -335,6 +347,7 @@ Opcode = TunnelAdapter(
         ),
         Switch("ocf", lambda ctx: ctx.ogf,
             {
+                "LINK_CTL": link_ctl_commands,
                 "HOST_CTL": host_ctl_commands,
                 "INFO_PARAM": info_param_commands,
                 "LE_CTL": le_ctl_commands,
@@ -357,7 +370,8 @@ class PLenAdapter(Adapter):
                 c.update(obj)
         if ctx.get("evt"):
             c.evt = ctx.evt
-            c.opcode = obj.opcode
+            if obj.get("opcode"):
+                c.opcode = obj.opcode
 
         return self.subcon.sizeof(c) - 1
 
@@ -375,6 +389,8 @@ command = Struct("command",
         ULInt8("plen"),
         Switch("pdata", lambda ctx: ctx._.opcode.ocf,
             {
+                # Link Control (OGF 0x01)
+                "INQUIRY": inquiry_cp,
                 # Controller & Baseband (OGF 0x03)
                 "SET_EVENT_MASK": set_event_mask_cp,
                 "RESET": Pass,
@@ -413,6 +429,10 @@ command = Struct("command",
 )
 
 # Events
+
+evt_inquiry_complete = Struct("evt_inquiry_complete",
+    ULInt8("status"),
+)
 
 evt_cmd_complete = Struct("evt_cmd_complete",
     ULInt8("ncmd"),
@@ -454,15 +474,25 @@ evt_cmd_complete = Struct("evt_cmd_complete",
     ),
 )
 
+evt_cmd_status = Struct("evt_cmd_status",
+    ULInt8("status"),
+    ULInt8("ncmd"),
+    Opcode,
+)
+
 event = Struct("event",
     Enum(ULInt8("evt"),
+        INQUIRY_COMPLETE = 0x01,
         CMD_COMPLETE = 0x0e,
+        CMD_STATUS = 0x0f,
     ),
     PLenAdapter(Sequence("params",
         ULInt8("plen"),
         Switch("pdata", lambda ctx: ctx._.evt,
             {
+                "INQUIRY_COMPLETE": evt_inquiry_complete,
                 "CMD_COMPLETE": evt_cmd_complete,
+                "CMD_STATUS": evt_cmd_status,
             }
         ),
     )),
