@@ -34,6 +34,19 @@ class DummyBT(asynchat.async_chat):
                 )
             )
 
+        def cmd_status(status):
+            return Container(
+                packet_indicator = "EVENT",
+                packet = Container(
+                    evt = "CMD_STATUS",
+                    params = Container(
+                        status = status,
+                        ncmd = 1,
+                        opcode = d.packet.opcode,
+                    )
+                )
+            )
+
         if ocf == "READ_LOCAL_FEATURES":
             c = cmd_complete(Container(status = 0,
                 features = [164, 8, 0, 192, 88, 30, 123, 131],
@@ -122,10 +135,29 @@ class DummyBT(asynchat.async_chat):
             c = cmd_complete(Container(status = 0))
         elif ocf == "RESET":
             c = cmd_complete(Container(status = 0))
+        elif ocf == "LE_SET_SCAN_PARAMETERS":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "LE_SET_SCAN_ENABLE":
+            c = cmd_complete(Container(status = 0))
+        elif ocf == "INQUIRY":
+            c = []
+            c.append(cmd_status(0))
+            c.append(Container(
+                packet_indicator = "EVENT",
+                packet = Container(
+                    evt = "INQUIRY_COMPLETE",
+                    params = Container(status = 0)
+                )
+            ))
+
         else:
             raise NotImplementedError, "Unsupported packet: %s" % d
 
-        self.sendall(uart.build(c))
+        if isinstance(c, list):
+            for i in c:
+                self.sendall(uart.build(i))
+        else:
+            self.sendall(uart.build(c))
 
     def new_packet(self, process_buffer=False):
         if process_buffer:
