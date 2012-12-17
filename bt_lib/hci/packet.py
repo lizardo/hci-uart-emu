@@ -434,6 +434,17 @@ evt_inquiry_complete = Struct("evt_inquiry_complete",
     ULInt8("status"),
 )
 
+# FIXME: allow multiple responses
+evt_inquiry_result = Struct("evt_inquiry_result",
+    ULInt8("num_rsp"),
+    Array(6, ULInt8("bdaddr")),
+    ULInt8("pscan_rep_mode"),
+    ULInt8("reserved1"),
+    ULInt8("reserved2"),
+    Array(3, ULInt8("dev_class")),
+    ULInt16("clock_offset"),
+)
+
 evt_cmd_complete = Struct("evt_cmd_complete",
     ULInt8("ncmd"),
     Opcode,
@@ -483,6 +494,7 @@ evt_cmd_status = Struct("evt_cmd_status",
 event = Struct("event",
     Enum(ULInt8("evt"),
         INQUIRY_COMPLETE = 0x01,
+        INQUIRY_RESULT = 0x02,
         CMD_COMPLETE = 0x0e,
         CMD_STATUS = 0x0f,
     ),
@@ -491,6 +503,7 @@ event = Struct("event",
         Switch("pdata", lambda ctx: ctx._.evt,
             {
                 "INQUIRY_COMPLETE": evt_inquiry_complete,
+                "INQUIRY_RESULT": evt_inquiry_result,
                 "CMD_COMPLETE": evt_cmd_complete,
                 "CMD_STATUS": evt_cmd_status,
             }
