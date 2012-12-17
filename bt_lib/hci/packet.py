@@ -260,6 +260,7 @@ le_ctl_commands = Enum(BitField("ocf", 10),
     LE_READ_BUFFER_SIZE = 0x0002,
     LE_READ_ADVERTISING_CHANNEL_TX_POWER = 0x0007,
     LE_SET_ADVERTISING_DATA = 0x0008,
+    LE_SET_SCAN_PARAMETERS = 0x000b,
 )
 
 le_set_event_mask_cp = Struct("le_set_event_mask_cp",
@@ -287,6 +288,18 @@ le_set_advertising_data_cp = Struct("le_set_advertising_data_cp",
 )
 
 le_set_advertising_data_rp = Struct("le_set_advertising_data_rp",
+    ULInt8("status"),
+)
+
+le_set_scan_parameters_cp = Struct("le_set_scan_parameters_cp",
+    ULInt8("type"),
+    ULInt16("interval"),
+    ULInt16("window"),
+    ULInt8("own_bdaddr_type"),
+    ULInt8("filter"),
+)
+
+le_set_scan_parameters_rp = Struct("le_set_scan_parameters_rp",
     ULInt8("status"),
 )
 
@@ -381,6 +394,7 @@ command = Struct("command",
                 "LE_READ_BUFFER_SIZE": Pass,
                 "LE_READ_ADVERTISING_CHANNEL_TX_POWER": Pass,
                 "LE_SET_ADVERTISING_DATA": le_set_advertising_data_cp,
+                "LE_SET_SCAN_PARAMETERS": le_set_scan_parameters_cp,
             }
         ),
     )),
@@ -423,6 +437,7 @@ evt_cmd_complete = Struct("evt_cmd_complete",
             "LE_READ_BUFFER_SIZE": le_read_buffer_size_rp,
             "LE_READ_ADVERTISING_CHANNEL_TX_POWER": le_read_advertising_channel_tx_power_rp,
             "LE_SET_ADVERTISING_DATA": le_set_advertising_data_rp,
+            "LE_SET_SCAN_PARAMETERS": le_set_scan_parameters_rp,
         }
     ),
 )
