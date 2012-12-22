@@ -164,7 +164,22 @@ class DummyBT(asynchat.async_chat):
                     params = Container(status = 0)
                 )
             ))
-
+        elif ocf == "CREATE_CONN":
+            c = []
+            c.append(cmd_status(0))
+            c.append(Container(
+                packet_indicator = "EVENT",
+                packet = Container(
+                    evt = "CONN_COMPLETE",
+                    params = Container(
+                        status = 0,
+                        handle = 0x0001,
+                        bdaddr = [0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca],
+                        link_type = 0x01,
+                        encr_mode = 0x00,
+                    )
+                )
+            ))
         else:
             raise NotImplementedError, "Unsupported packet: %s" % d
 

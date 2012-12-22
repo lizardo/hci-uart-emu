@@ -4,12 +4,22 @@ from construct import *
 
 link_ctl_commands = Enum(BitField("ocf", 10),
     INQUIRY = 0x0001,
+    CREATE_CONN = 0x0005,
 )
 
 inquiry_cp = Struct("inquiry_cp",
     Array(3, ULInt8("lap")),
     ULInt8("length"),
     ULInt8("num_rsp"),
+)
+
+create_conn_cp = Struct("create_conn_cp",
+    Array(6, ULInt8("bdaddr")),
+    ULInt16("pkt_type"),
+    ULInt8("pscan_rep_mode"),
+    ULInt8("reserved"),
+    ULInt16("clock_offset"),
+    ULInt8("role_switch"),
 )
 
 # Controller & Baseband (OGF 0x03)
@@ -391,6 +401,7 @@ command = Struct("command",
             {
                 # Link Control (OGF 0x01)
                 "INQUIRY": inquiry_cp,
+                "CREATE_CONN": create_conn_cp,
                 # Controller & Baseband (OGF 0x03)
                 "SET_EVENT_MASK": set_event_mask_cp,
                 "RESET": Pass,
@@ -445,6 +456,14 @@ evt_inquiry_result = Struct("evt_inquiry_result",
     ULInt16("clock_offset"),
 )
 
+evt_conn_complete = Struct("evt_conn_complete",
+    ULInt8("status"),
+    ULInt16("handle"),
+    Array(6, ULInt8("bdaddr")),
+    ULInt8("link_type"),
+    ULInt8("encr_mode"),
+)
+
 evt_cmd_complete = Struct("evt_cmd_complete",
     ULInt8("ncmd"),
     Opcode,
@@ -495,6 +514,7 @@ event = Struct("event",
     Enum(ULInt8("evt"),
         INQUIRY_COMPLETE = 0x01,
         INQUIRY_RESULT = 0x02,
+        CONN_COMPLETE = 0x03,
         CMD_COMPLETE = 0x0e,
         CMD_STATUS = 0x0f,
     ),
@@ -504,6 +524,7 @@ event = Struct("event",
             {
                 "INQUIRY_COMPLETE": evt_inquiry_complete,
                 "INQUIRY_RESULT": evt_inquiry_result,
+                "CONN_COMPLETE": evt_conn_complete,
                 "CMD_COMPLETE": evt_cmd_complete,
                 "CMD_STATUS": evt_cmd_status,
             }
