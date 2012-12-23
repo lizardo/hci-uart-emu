@@ -135,6 +135,7 @@ class DummyBT(asynchat.async_chat):
                 level = 0,
             ))
         elif ocf == "READ_LOCAL_EXT_FEATURES":
+            assert d.packet.params.page_num == 1
             c = cmd_complete(Container(status = 0,
                 page_num = 1,
                 max_page_num = 1,
@@ -184,6 +185,7 @@ class DummyBT(asynchat.async_chat):
                 )
             ))
         elif ocf == "CREATE_CONN":
+            assert d.packet.params.bdaddr == [0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca]
             c = []
             c.append(cmd_status(0))
             c.append(Container(
@@ -200,6 +202,7 @@ class DummyBT(asynchat.async_chat):
                 )
             ))
         elif ocf == "READ_REMOTE_FEATURES":
+            assert d.packet.params.handle == 0x0001
             c = []
             c.append(cmd_status(0))
             c.append(Container(
@@ -214,6 +217,8 @@ class DummyBT(asynchat.async_chat):
                 )
             ))
         elif ocf == "READ_REMOTE_EXT_FEATURES":
+            assert d.packet.params.handle == 0x0001
+            assert d.packet.params.page_num == 1
             c = []
             c.append(cmd_status(0))
             c.append(Container(
