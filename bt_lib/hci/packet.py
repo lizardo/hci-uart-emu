@@ -5,6 +5,7 @@ from construct import *
 link_ctl_commands = Enum(BitField("ocf", 10),
     INQUIRY = 0x0001,
     CREATE_CONN = 0x0005,
+    REMOTE_NAME_REQ = 0x0019,
     READ_REMOTE_FEATURES = 0x001b,
     READ_REMOTE_EXT_FEATURES = 0x001c,
 )
@@ -22,6 +23,13 @@ create_conn_cp = Struct("create_conn_cp",
     ULInt8("reserved"),
     ULInt16("clock_offset"),
     ULInt8("role_switch"),
+)
+
+remote_name_req_cp = Struct("remote_name_req_cp",
+    Array(6, ULInt8("bdaddr")),
+    ULInt8("pscan_rep_mode"),
+    ULInt8("reserved"),
+    ULInt16("clock_offset"),
 )
 
 read_remote_features_cp = Struct("read_remote_features_cp",
@@ -413,6 +421,7 @@ command = Struct("command",
                 # Link Control (OGF 0x01)
                 "INQUIRY": inquiry_cp,
                 "CREATE_CONN": create_conn_cp,
+                "REMOTE_NAME_REQ": remote_name_req_cp,
                 "READ_REMOTE_FEATURES": read_remote_features_cp,
                 "READ_REMOTE_EXT_FEATURES": read_remote_ext_features_cp,
                 # Controller & Baseband (OGF 0x03)
@@ -475,6 +484,12 @@ evt_conn_complete = Struct("evt_conn_complete",
     Array(6, ULInt8("bdaddr")),
     ULInt8("link_type"),
     ULInt8("encr_mode"),
+)
+
+evt_remote_name_req_complete = Struct("evt_remote_name_req_complete",
+    ULInt8("status"),
+    Array(6, ULInt8("bdaddr")),
+    String("name", HCI_MAX_NAME_LENGTH, padchar="\x00"),
 )
 
 evt_read_remote_features_complete = Struct("evt_read_remote_features_complete",
@@ -542,6 +557,7 @@ event = Struct("event",
         INQUIRY_COMPLETE = 0x01,
         INQUIRY_RESULT = 0x02,
         CONN_COMPLETE = 0x03,
+        REMOTE_NAME_REQ_COMPLETE = 0x07,
         READ_REMOTE_FEATURES_COMPLETE = 0x0b,
         CMD_COMPLETE = 0x0e,
         CMD_STATUS = 0x0f,
@@ -554,6 +570,7 @@ event = Struct("event",
                 "INQUIRY_COMPLETE": evt_inquiry_complete,
                 "INQUIRY_RESULT": evt_inquiry_result,
                 "CONN_COMPLETE": evt_conn_complete,
+                "REMOTE_NAME_REQ_COMPLETE": evt_remote_name_req_complete,
                 "READ_REMOTE_FEATURES_COMPLETE": evt_read_remote_features_complete,
                 "CMD_COMPLETE": evt_cmd_complete,
                 "CMD_STATUS": evt_cmd_status,

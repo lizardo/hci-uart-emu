@@ -234,6 +234,21 @@ class DummyBT(asynchat.async_chat):
                     )
                 )
             ))
+        elif ocf == "REMOTE_NAME_REQ":
+            assert d.packet.params.bdaddr == [0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca]
+            c = []
+            c.append(cmd_status(0))
+            c.append(Container(
+                packet_indicator = "EVENT",
+                packet = Container(
+                    evt = "REMOTE_NAME_REQ_COMPLETE",
+                    params = Container(
+                        status = 0,
+                        bdaddr = [0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca],
+                        name = "cafe",
+                    )
+                )
+            ))
         else:
             raise NotImplementedError, "Unsupported packet: %s" % d
 
