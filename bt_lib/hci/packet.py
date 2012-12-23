@@ -6,6 +6,7 @@ link_ctl_commands = Enum(BitField("ocf", 10),
     INQUIRY = 0x0001,
     CREATE_CONN = 0x0005,
     READ_REMOTE_FEATURES = 0x001b,
+    READ_REMOTE_EXT_FEATURES = 0x001c,
 )
 
 inquiry_cp = Struct("inquiry_cp",
@@ -25,6 +26,11 @@ create_conn_cp = Struct("create_conn_cp",
 
 read_remote_features_cp = Struct("read_remote_features_cp",
     ULInt16("handle"),
+)
+
+read_remote_ext_features_cp = Struct("read_remote_ext_features_cp",
+    ULInt16("handle"),
+    ULInt8("page_num"),
 )
 
 # Controller & Baseband (OGF 0x03)
@@ -408,6 +414,7 @@ command = Struct("command",
                 "INQUIRY": inquiry_cp,
                 "CREATE_CONN": create_conn_cp,
                 "READ_REMOTE_FEATURES": read_remote_features_cp,
+                "READ_REMOTE_EXT_FEATURES": read_remote_ext_features_cp,
                 # Controller & Baseband (OGF 0x03)
                 "SET_EVENT_MASK": set_event_mask_cp,
                 "RESET": Pass,
@@ -522,6 +529,14 @@ evt_cmd_status = Struct("evt_cmd_status",
     Opcode,
 )
 
+evt_read_remote_ext_features_complete = Struct("evt_read_remote_ext_features_complete",
+    ULInt8("status"),
+    ULInt16("handle"),
+    ULInt8("page_num"),
+    ULInt8("max_page_num"),
+    Array(8, ULInt8("features")),
+)
+
 event = Struct("event",
     Enum(ULInt8("evt"),
         INQUIRY_COMPLETE = 0x01,
@@ -530,6 +545,7 @@ event = Struct("event",
         READ_REMOTE_FEATURES_COMPLETE = 0x0b,
         CMD_COMPLETE = 0x0e,
         CMD_STATUS = 0x0f,
+        READ_REMOTE_EXT_FEATURES_COMPLETE = 0x23,
     ),
     PLenAdapter(Sequence("params",
         ULInt8("plen"),
@@ -541,6 +557,7 @@ event = Struct("event",
                 "READ_REMOTE_FEATURES_COMPLETE": evt_read_remote_features_complete,
                 "CMD_COMPLETE": evt_cmd_complete,
                 "CMD_STATUS": evt_cmd_status,
+                "READ_REMOTE_EXT_FEATURES_COMPLETE": evt_read_remote_ext_features_complete,
             }
         ),
     )),
