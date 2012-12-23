@@ -1,4 +1,5 @@
 from construct import *
+from bt_lib.construct_helpers import *
 
 # Link Control (OGF 0x01)
 
@@ -74,29 +75,13 @@ reset_rp = Struct("reset_rp",
     ULInt8("status"),
 )
 
-# FIXME: Without this hack, context inside If/Switch is incorrectly placed
-# inside "_" (just for sizeof())
-class _Switch(Switch):
-    def _sizeof(self, ctx):
-        while ctx.get("_"):
-            ctx = ctx._
-        return Switch._sizeof(self, ctx)
-
-def _If(predicate, subcon):
-    return _Switch(subcon.name, lambda ctx: bool(predicate(ctx)),
-        {
-            True: subcon,
-            False: Pass,
-        }
-    )
-
 set_event_flt_cp = Struct("set_event_flt_cp",
     Enum(ULInt8("flt_type"),
         CLEAR_ALL = 0x00,
         INQ_RESULT = 0x01,
         CONN_SETUP = 0x02,
     ),
-    _If(lambda ctx: ctx.flt_type != "CLEAR_ALL",
+    FixedIf(lambda ctx: ctx.flt_type != "CLEAR_ALL",
         Switch("cond_type", lambda ctx: ctx.flt_type,
             {
                 "INQ_RESULT": Enum(ULInt8("cond_type"),
@@ -112,7 +97,7 @@ set_event_flt_cp = Struct("set_event_flt_cp",
             }
         ),
     ),
-    _If(lambda ctx: ctx.flt_type != "CLEAR_ALL",
+    FixedIf(lambda ctx: ctx.flt_type != "CLEAR_ALL",
         Switch("condition", lambda ctx: ctx.cond_type,
             {
                 "RETURN_ALL": Pass,
@@ -356,13 +341,6 @@ le_set_scan_enable_rp = Struct("le_set_scan_enable_rp",
 
 # Commands
 
-class SwapAdapter(Adapter):
-    def _encode(self, obj, context):
-        return "".join(reversed(obj))
-
-    def _decode(self, obj, context):
-        return "".join(reversed(obj))
-
 Opcode = TunnelAdapter(
     SwapAdapter(Bytes("opcode", 2)),
     EmbeddedBitStruct(
@@ -384,33 +362,6 @@ Opcode = TunnelAdapter(
         ),
     )
 )
-
-# FIXME: Find better way to calculate plen
-class PLenAdapter(Adapter):
-    def get_plen(self, obj, ctx):
-        if obj is None:
-            return 0
-
-        c = Container()
-        if ctx.get("opcode"):
-            c.opcode = ctx.opcode
-            if ctx.opcode.ocf == "SET_EVENT_FLT":
-                # This command requires checking some fields
-                c.update(obj)
-        if ctx.get("evt"):
-            c.evt = ctx.evt
-            if obj.get("opcode"):
-                c.opcode = obj.opcode
-
-        return self.subcon.sizeof(c) - 1
-
-    def _encode(self, obj, ctx):
-        return (self.get_plen(obj, ctx), obj)
-
-    def _decode(self, obj, ctx):
-        assert self.get_plen(obj[1], ctx) == obj[0]
-
-        return obj[1]
 
 command = Struct("command",
     Opcode,
@@ -501,7 +452,7 @@ evt_read_remote_features_complete = Struct("evt_read_remote_features_complete",
 evt_cmd_complete = Struct("evt_cmd_complete",
     ULInt8("ncmd"),
     Opcode,
-    _Switch("rparams", lambda ctx: ctx.opcode.ocf,
+    FixedSwitch("rparams", lambda ctx: ctx.opcode.ocf,
         {
             # Controller & Baseband (OGF 0x03)
             "SET_EVENT_MASK": set_event_mask_rp,
