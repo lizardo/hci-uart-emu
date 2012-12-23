@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
+import sys
 import socket
 import struct
 import asynchat
@@ -9,13 +10,31 @@ from construct import Container
 from bt_lib.hci.transport import uart
 
 class DummyBT(asynchat.async_chat):
-    def __init__(self, path):
+    def __init__(self, path, dumpfile):
         asynchat.async_chat.__init__(self)
         self.create_socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.connect(path)
         self.new_packet()
 
+        btsnoop_hdr = struct.pack(">8BLL", 0x62, 0x74, 0x73, 0x6e, 0x6f, 0x6f,
+                0x70, 0x00, 1, 1002)
+        self.dumpfile = open(dumpfile, "wb")
+        self.dumpfile.write(btsnoop_hdr)
+        self.dumpfile.flush()
+
+    def dump_data(self, data, incoming=True):
+        flags = 0x00 if incoming else 0x01
+        if ord(data[0]) in [0x01, 0x04]:
+            flags |= 0x02
+
+        # size, len, flags, drops, ts
+        btsnoop_pkt = struct.pack(">LLLLQ", len(data), len(data), flags, 0, 0)
+        self.dumpfile.write(btsnoop_pkt + data)
+        self.dumpfile.flush()
+
     def process_packet(self):
+        self.dump_data(self.buf)
+
         d = uart.parse(self.buf)
 
         assert d.packet_indicator == "COMMAND"
@@ -185,9 +204,13 @@ class DummyBT(asynchat.async_chat):
 
         if isinstance(c, list):
             for i in c:
-                self.sendall(uart.build(i))
+                data = uart.build(i)
+                self.dump_data(data, False)
+                self.sendall(data)
         else:
-            self.sendall(uart.build(c))
+            data = uart.build(c)
+            self.dump_data(data, False)
+            self.sendall(data)
 
     def new_packet(self, process_buffer=False):
         if process_buffer:
@@ -222,5 +245,9 @@ class DummyBT(asynchat.async_chat):
         else:
             raise NotImplementedError, "Unsupported transport: %#x" % self.transport
 
-bt = DummyBT("/tmp/qemu-serial")
+if len(sys.argv) != 2:
+    print("Usage: %s <file.dump>" % sys.argv[0], file=sys.stderr)
+    sys.exit(1)
+
+bt = DummyBT("/tmp/qemu-serial", sys.argv[1])
 asyncore.loop()
