@@ -278,12 +278,29 @@ class DummyBT(asynchat.async_chat):
         if not self.transport:
             self.transport = struct.unpack_from("B", self.buf, 0)[0]
             if self.transport == 0x01:
+                # HCI Command packet
                 self.set_terminator(3)
+            elif self.transport == 0x02:
+                # HCI ACL Data packet
+                self.set_terminator(4)
             else:
                 raise NotImplementedError, "Unsupported transport: %#x" % self.transport
         elif self.transport == 0x01:
+            # HCI Command packet
             if self.plen is None:
                 self.plen = struct.unpack_from("B", self.buf, 3)[0]
+                if self.plen:
+                    self.set_terminator(self.plen)
+                else:
+                    print("(plen=0):", self.buf.encode("hex"))
+                    self.new_packet(True)
+            else:
+                print("(plen=%d):" % self.plen, self.buf.encode("hex"))
+                self.new_packet(True)
+        elif self.transport == 0x02:
+            # HCI ACL Data packet
+            if self.plen is None:
+                self.plen = struct.unpack_from("H", self.buf, 3)[0]
                 if self.plen:
                     self.set_terminator(self.plen)
                 else:

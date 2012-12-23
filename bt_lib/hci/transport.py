@@ -1,6 +1,6 @@
 from construct import *
 from packet import command, event
-#, acldata, scodata
+from acldata import acldata
 
 uart = Struct("uart",
     Enum(ULInt8("packet_indicator"),
@@ -12,7 +12,7 @@ uart = Struct("uart",
     Switch("packet", lambda ctx: ctx.packet_indicator,
         {
             "COMMAND": command,
-            #"ACLDATA": acldata,
+            "ACLDATA": acldata,
             #"SCODATA": scodata,
             "EVENT": event,
         }
