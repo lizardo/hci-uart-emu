@@ -199,6 +199,20 @@ class DummyBT(asynchat.async_chat):
                     )
                 )
             ))
+        elif ocf == "READ_REMOTE_FEATURES":
+            c = []
+            c.append(cmd_status(0))
+            c.append(Container(
+                packet_indicator = "EVENT",
+                packet = Container(
+                    evt = "READ_REMOTE_FEATURES_COMPLETE",
+                    params = Container(
+                        status = 0,
+                        handle = 0x0001,
+                        features = [0xa4, 0x08, 0x00, 0xc0, 0x58, 0x1e, 0x7b, 0x83],
+                    )
+                )
+            ))
         else:
             raise NotImplementedError, "Unsupported packet: %s" % d
 
