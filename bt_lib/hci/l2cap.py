@@ -39,6 +39,8 @@ l2cap_cmd_hdr = Struct("l2cap_cmd_hdr",
     Enum(ULInt8("code"),
         CONN_REQ = 0x02,
         CONN_RSP = 0x03,
+        CONF_REQ = 0x04,
+        CONF_RSP = 0x05,
         INFO_REQ = 0x0a,
         INFO_RSP = 0x0b,
     ),
@@ -56,6 +58,19 @@ l2cap_conn_rsp = Struct("l2cap_conn_rsp",
     ULInt16("scid"),
     ULInt16("result"),
     ULInt16("status"),
+)
+
+l2cap_conf_req = Struct("l2cap_conf_req",
+    ULInt16("dcid"),
+    ULInt16("flags"),
+    # data
+)
+
+l2cap_conf_rsp = Struct("l2cap_conf_rsp",
+    ULInt16("scid"),
+    ULInt16("flags"),
+    ULInt16("result"),
+    # data
 )
 
 l2cap_info_type = Enum(ULInt16("type"),
@@ -84,6 +99,8 @@ l2cap_sig = HeaderAdapter(Struct("l2cap_sig",
         {
             "CONN_REQ": l2cap_conn_req,
             "CONN_RSP": l2cap_conn_rsp,
+            "CONF_REQ": l2cap_conf_req,
+            "CONF_RSP": l2cap_conf_rsp,
             "INFO_REQ": l2cap_info_req,
             "INFO_RSP": l2cap_info_rsp,
         }
