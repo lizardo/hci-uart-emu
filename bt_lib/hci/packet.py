@@ -495,6 +495,12 @@ evt_cmd_status = Struct("evt_cmd_status",
     Opcode,
 )
 
+evt_num_comp_pkts = Struct("evt_num_comp_pkts",
+    ULInt8("num_handles"),
+    ULInt16("handle"),
+    ULInt16("count"),
+)
+
 evt_read_remote_ext_features_complete = Struct("evt_read_remote_ext_features_complete",
     ULInt8("status"),
     ULInt16("handle"),
@@ -512,6 +518,7 @@ event = Struct("event",
         READ_REMOTE_FEATURES_COMPLETE = 0x0b,
         CMD_COMPLETE = 0x0e,
         CMD_STATUS = 0x0f,
+        NUM_COMP_PKTS = 0x13,
         READ_REMOTE_EXT_FEATURES_COMPLETE = 0x23,
     ),
     PLenAdapter(Sequence("params",
@@ -525,6 +532,7 @@ event = Struct("event",
                 "READ_REMOTE_FEATURES_COMPLETE": evt_read_remote_features_complete,
                 "CMD_COMPLETE": evt_cmd_complete,
                 "CMD_STATUS": evt_cmd_status,
+                "NUM_COMP_PKTS": evt_num_comp_pkts,
                 "READ_REMOTE_EXT_FEATURES_COMPLETE": evt_read_remote_ext_features_complete,
             }
         ),
