@@ -37,11 +37,25 @@ l2cap_hdr = Struct("l2cap_hdr",
 
 l2cap_cmd_hdr = Struct("l2cap_cmd_hdr",
     Enum(ULInt8("code"),
+        CONN_REQ = 0x02,
+        CONN_RSP = 0x03,
         INFO_REQ = 0x0a,
         INFO_RSP = 0x0b,
     ),
     ULInt8("ident"),
     ULInt16("dlen"),
+)
+
+l2cap_conn_req = Struct("l2cap_conn_req",
+    ULInt16("psm"),
+    ULInt16("scid"),
+)
+
+l2cap_conn_rsp = Struct("l2cap_conn_rsp",
+    ULInt16("dcid"),
+    ULInt16("scid"),
+    ULInt16("result"),
+    ULInt16("status"),
 )
 
 l2cap_info_type = Enum(ULInt16("type"),
@@ -68,6 +82,8 @@ l2cap_sig = HeaderAdapter(Struct("l2cap_sig",
     Embed(l2cap_cmd_hdr),
     FixedSwitch("data", lambda ctx: ctx.code,
         {
+            "CONN_REQ": l2cap_conn_req,
+            "CONN_RSP": l2cap_conn_rsp,
             "INFO_REQ": l2cap_info_req,
             "INFO_RSP": l2cap_info_rsp,
         }
