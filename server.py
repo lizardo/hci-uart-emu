@@ -32,10 +32,70 @@ class DummyBT(asynchat.async_chat):
         self.dumpfile.write(btsnoop_pkt + data)
         self.dumpfile.flush()
 
+    def send_response(self, c):
+        if isinstance(c, list):
+            for i in c:
+                data = uart.build(i)
+                self.dump_data(data, False)
+                self.sendall(data)
+        else:
+            data = uart.build(c)
+            self.dump_data(data, False)
+            self.sendall(data)
+
+    def process_acl_data(self, packet):
+        if packet.data.cid == 'SIGNALING' and \
+                packet.data.data.code == 'INFO_REQ' and \
+                packet.data.data.data.type == 'FEAT_MASK':
+
+            c = Container(
+                packet_indicator = 'ACLDATA',
+                packet = Container(
+                    header = Container(
+                        handle = 1,
+                        flags = 'START',
+                    ),
+                    data = Container(
+                        cid = 'SIGNALING',
+                        data = Container(
+                            ident = 1,
+                            code = 'INFO_RSP',
+                            data = Container(
+                                type = 'FEAT_MASK',
+                                result = 0x0000,
+                                data = 0x00000080,
+                            ),
+                        ),
+                    )
+                )
+            )
+
+        else:
+            raise NotImplementedError, "Unsupported ACL packet: %s" % packet
+
+        self.send_response(c)
+
+        c = Container(
+            packet_indicator = "EVENT",
+            packet = Container(
+                evt = "NUM_COMP_PKTS",
+                params = Container(
+                    num_handles = 1,
+                    handle = 0x0001,
+                    count = 1,
+                )
+            )
+        )
+        self.send_response(c)
+
     def process_packet(self):
         self.dump_data(self.buf)
 
         d = uart.parse(self.buf)
+
+        if d.packet_indicator == "ACLDATA":
+            self.process_acl_data(d.packet)
+            return
 
         assert d.packet_indicator == "COMMAND"
         ocf = d.packet.opcode.ocf
@@ -252,15 +312,7 @@ class DummyBT(asynchat.async_chat):
         else:
             raise NotImplementedError, "Unsupported packet: %s" % d
 
-        if isinstance(c, list):
-            for i in c:
-                data = uart.build(i)
-                self.dump_data(data, False)
-                self.sendall(data)
-        else:
-            data = uart.build(c)
-            self.dump_data(data, False)
-            self.sendall(data)
+        self.send_response(c)
 
     def new_packet(self, process_buffer=False):
         if process_buffer:

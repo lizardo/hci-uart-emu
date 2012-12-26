@@ -212,3 +212,33 @@ def test10():
     )
     assert uart.parse(b) == c
     assert uart.build(c) == b
+
+def test11():
+    # ACL data: handle 1 flags 0x02 dlen 16
+    #     L2CAP(s): Info rsp: type 2 result 0
+    #       Extended feature mask 0x0080
+    #         Fixed Channels
+    b = h2b("02 01 20 10 00 0C 00 01 00 0B 01 08 00 02 00 00 00 80 00 00 00")
+    c = Container(
+        packet_indicator = 'ACLDATA',
+        packet = Container(
+            header = Container(
+                handle = 1,
+                flags = 'START',
+            ),
+            data = Container(
+                cid = 'SIGNALING',
+                data = Container(
+                    ident = 1,
+                    code = 'INFO_RSP',
+                    data = Container(
+                        type = 'FEAT_MASK',
+                        result = 0x0000,
+                        data = 0x00000080,
+                    ),
+                ),
+            )
+        )
+    )
+    assert uart.parse(b) == c
+    assert uart.build(c) == b

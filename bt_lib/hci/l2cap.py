@@ -14,6 +14,12 @@ class HeaderAdapter(Adapter):
         if ctx.data.data.get("code"):
             c.code = ctx.data.data.code
 
+        if ctx.data.data.get("data"):
+            if ctx.data.data.get("type"):
+                c.type = ctx.data.data.type
+            else:
+                c.type = ctx.data.data.data.type
+
         obj.dlen = self.subcon.subcons[1].sizeof(c)
 
         return obj
@@ -33,14 +39,27 @@ l2cap_hdr = Struct("l2cap_hdr",
 l2cap_cmd_hdr = Struct("l2cap_cmd_hdr",
     Enum(ULInt8("code"),
         INFO_REQ = 0x0a,
+        INFO_RSP = 0x0b,
     ),
     ULInt8("ident"),
     ULInt16("dlen"),
 )
 
+l2cap_info_type = Enum(ULInt16("type"),
+    FEAT_MASK = 0x0002,
+)
+
 l2cap_info_req = Struct("l2cap_info_req",
-    Enum(ULInt16("type"),
-        FEAT_MASK = 0x0002,
+    l2cap_info_type,
+)
+
+l2cap_info_rsp = Struct("l2cap_info_rsp",
+    l2cap_info_type,
+    ULInt16("result"),
+    FixedSwitch("data", lambda ctx: ctx.type,
+        {
+            "FEAT_MASK": ULInt32("feat_mask"),
+        }
     ),
 )
 
@@ -49,6 +68,7 @@ l2cap_sig = HeaderAdapter(Struct("l2cap_sig",
     FixedSwitch("data", lambda ctx: ctx.code,
         {
             "INFO_REQ": l2cap_info_req,
+            "INFO_RSP": l2cap_info_rsp,
         }
     ),
 ))
