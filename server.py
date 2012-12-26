@@ -52,13 +52,13 @@ class DummyBT(asynchat.async_chat):
                 packet_indicator = 'ACLDATA',
                 packet = Container(
                     header = Container(
-                        handle = 1,
+                        handle = packet.header.handle,
                         flags = 'START',
                     ),
                     data = Container(
                         cid = 'SIGNALING',
                         data = Container(
-                            ident = 1,
+                            ident = packet.data.data.ident,
                             code = 'INFO_RSP',
                             data = Container(
                                 type = 'FEAT_MASK',
@@ -69,7 +69,31 @@ class DummyBT(asynchat.async_chat):
                     )
                 )
             )
+        elif packet.data.cid == 'SIGNALING' and \
+                packet.data.data.code == 'INFO_REQ' and \
+                packet.data.data.data.type == 'FIXED_CHAN':
 
+            c = Container(
+                packet_indicator = 'ACLDATA',
+                packet = Container(
+                    header = Container(
+                        handle = packet.header.handle,
+                        flags = 'START',
+                    ),
+                    data = Container(
+                        cid = 'SIGNALING',
+                        data = Container(
+                            ident = packet.data.data.ident,
+                            code = 'INFO_RSP',
+                            data = Container(
+                                type = 'FIXED_CHAN',
+                                result = 0x0000,
+                                data = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+                            ),
+                        ),
+                    )
+                )
+            )
         else:
             raise NotImplementedError, "Unsupported ACL packet: %s" % packet
 

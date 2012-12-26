@@ -47,6 +47,7 @@ l2cap_cmd_hdr = Struct("l2cap_cmd_hdr",
 
 l2cap_info_type = Enum(ULInt16("type"),
     FEAT_MASK = 0x0002,
+    FIXED_CHAN = 0x0003,
 )
 
 l2cap_info_req = Struct("l2cap_info_req",
@@ -59,6 +60,7 @@ l2cap_info_rsp = Struct("l2cap_info_rsp",
     FixedSwitch("data", lambda ctx: ctx.type,
         {
             "FEAT_MASK": ULInt32("feat_mask"),
+            "FIXED_CHAN": Array(8, ULInt8("fixed_chan")),
         }
     ),
 )
