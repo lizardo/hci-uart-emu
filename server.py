@@ -120,6 +120,29 @@ class DummyBT(asynchat.async_chat):
                 )
             )
         elif packet.data.cid == 'SIGNALING' and \
+                packet.data.data.code == 'DISCONN_REQ':
+            c = Container(
+                packet_indicator = 'ACLDATA',
+                packet = Container(
+                    header = Container(
+                        handle = packet.header.handle,
+                        flags = 'START',
+                    ),
+                    data = Container(
+                        cid = 'SIGNALING',
+                        data = Container(
+                            ident = packet.data.data.ident,
+                            code = 'DISCONN_RSP',
+                            data = Container(
+                                # arbitrarily set DCID == SCID
+                                dcid = packet.data.data.data.scid,
+                                scid = packet.data.data.data.scid,
+                            ),
+                        ),
+                    )
+                )
+            )
+        elif packet.data.cid == 'SIGNALING' and \
                 packet.data.data.code == 'CONF_REQ':
             c = Container(
                 packet_indicator = 'ACLDATA',
