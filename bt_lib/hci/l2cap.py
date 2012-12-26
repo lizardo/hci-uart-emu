@@ -1,25 +1,24 @@
 from construct import *
 from bt_lib.construct_helpers import *
 
+def _build_context(ctx, fields):
+    c = Container()
+
+    while ctx.get("data") and isinstance(ctx["data"], Container):
+        for f in fields:
+            if ctx.data.get(f):
+                c[f] = ctx.data.get(f)
+
+        ctx = ctx.data
+
+    return c
+
 # FIXME: find more elegant solution for calculating dlen
 class HeaderAdapter(Adapter):
     def _encode(self, obj, ctx):
         assert self.subcon.subcons[1].name == "data"
 
-        c = Container()
-        if ctx.data.get("cid"):
-            c.cid = ctx.data.cid
-        if ctx.data.get("code"):
-            c.code = ctx.data.code
-        if ctx.data.data.get("code"):
-            c.code = ctx.data.data.code
-
-        if ctx.data.data.get("data"):
-            if ctx.data.data.get("type"):
-                c.type = ctx.data.data.type
-            else:
-                c.type = ctx.data.data.data.type
-
+        c = _build_context(ctx, ("cid", "code", "type"))
         obj.dlen = self.subcon.subcons[1].sizeof(c)
 
         return obj
