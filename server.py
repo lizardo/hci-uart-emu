@@ -285,6 +285,21 @@ class DummyBT(asynchat.async_chat):
                     )
                 )
             ))
+        elif ocf == "DISCONNECT":
+            assert d.packet.params.handle == 0x0001
+            c = []
+            c.append(cmd_status(0))
+            c.append(Container(
+                packet_indicator = "EVENT",
+                packet = Container(
+                    evt = "DISCONN_COMPLETE",
+                    params = Container(
+                        status = 0,
+                        handle = d.packet.params.handle,
+                        reason = d.packet.params.reason,
+                    )
+                )
+            ))
         elif ocf == "READ_REMOTE_FEATURES":
             assert d.packet.params.handle == 0x0001
             c = []
