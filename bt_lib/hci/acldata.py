@@ -1,5 +1,6 @@
 from construct import *
 from bt_lib.construct_helpers import *
+from l2cap import l2cap
 
 Header = TunnelAdapter(
     SwapAdapter(Bytes("header", 2)),
@@ -18,6 +19,9 @@ Header = TunnelAdapter(
 
 acldata = Struct("acldata",
     Header,
-    PascalString("data", ULInt16("dlen")),
+    TunnelAdapter(
+        PascalString("data", ULInt16("dlen")),
+        l2cap,
+    ),
     Terminator,
 )

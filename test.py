@@ -186,3 +186,29 @@ def test9():
         )
     assert uart.parse(b) == c
     assert uart.build(c) == b
+
+def test10():
+    # ACL data: handle 1 flags 0x00 dlen 10
+    #     L2CAP(s): Info req: type 2
+    b = h2b("02 01 00 0A 00 06 00 01 00 0A 01 02 00 02 00")
+    c = Container(
+        packet_indicator = 'ACLDATA',
+        packet = Container(
+            header = Container(
+                handle = 1,
+                flags = 'START_NO_FLUSH',
+            ),
+            data = Container(
+                cid = 'SIGNALING',
+                data = Container(
+                    ident = 1,
+                    code = 'INFO_REQ',
+                    data = Container(
+                        type = 'FEAT_MASK',
+                    ),
+                ),
+            )
+        )
+    )
+    assert uart.parse(b) == c
+    assert uart.build(c) == b
