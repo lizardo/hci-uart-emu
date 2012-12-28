@@ -35,17 +35,29 @@ l2cap_conn_rsp = Struct("l2cap_conn_rsp",
     ULInt16("status"),
 )
 
+l2cap_conf_opt = DataStruct("l2cap_conf_opt",
+    Enum(ULInt8("type"),
+        MTU = 0x01,
+    ),
+    ULInt8("dlen"),
+    Switch("data", lambda ctx: ctx.type,
+        {
+            "MTU": ULInt16("mtu"),
+        }
+    ),
+)
+
 l2cap_conf_req = Struct("l2cap_conf_req",
     ULInt16("dcid"),
     ULInt16("flags"),
-    # data
+    OptionalGreedyRange(l2cap_conf_opt),
 )
 
 l2cap_conf_rsp = Struct("l2cap_conf_rsp",
     ULInt16("scid"),
     ULInt16("flags"),
     ULInt16("result"),
-    # data
+    OptionalGreedyRange(l2cap_conf_opt),
 )
 
 l2cap_disconn_req = Struct("l2cap_disconn_req",

@@ -242,3 +242,34 @@ def test11():
     )
     assert uart.parse(b) == c
     assert uart.build(c) == b
+
+def test12():
+    # ACL data: handle 42 flags 0x02 dlen 16
+    #     L2CAP(s): Config req: dcid 0x0040 flags 0x00 clen 4
+    #       MTU 48
+    b = h2b("02 2A 20 10 00 0C 00 01 00 04 01 08 00 40 00 00 00 01 02 30 00")
+    c = Container(
+        packet_indicator = 'ACLDATA',
+        packet = Container(
+            header = Container(
+                handle = 42,
+                flags = 'START',
+            ),
+            data = Container(
+                cid = 'SIGNALING',
+                data = Container(
+                    ident = 1,
+                    code = 'CONF_REQ',
+                    data = Container(
+                        dcid = 0x0040,
+                        flags = 0x0000,
+                        l2cap_conf_opt = [
+                            Container(type = 'MTU', data = 48),
+                        ],
+                    ),
+                ),
+            )
+        )
+    )
+    assert uart.parse(b) == c
+    assert uart.build(c) == b
