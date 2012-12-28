@@ -23,5 +23,4 @@ acldata = Struct("acldata",
         PascalString("data", ULInt16("dlen")),
         l2cap,
     ),
-    Terminator,
 )

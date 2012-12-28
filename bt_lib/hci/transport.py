@@ -16,5 +16,6 @@ uart = Struct("uart",
             #"SCODATA": scodata,
             "EVENT": event,
         }
-    )
+    ),
+    Terminator,
 )

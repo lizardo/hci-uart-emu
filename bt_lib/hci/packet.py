@@ -416,7 +416,6 @@ command = Struct("command",
             }
         ),
     )),
-    Terminator,
 )
 
 # Events
@@ -552,5 +551,4 @@ event = Struct("event",
             }
         ),
     )),
-    Terminator,
 )
