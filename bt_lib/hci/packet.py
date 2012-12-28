@@ -5,6 +5,7 @@ from bt_lib.construct_helpers import *
 
 link_ctl_commands = Enum(BitField("ocf", 10),
     INQUIRY = 0x0001,
+    INQUIRY_CANCEL = 0x0002,
     CREATE_CONN = 0x0005,
     DISCONNECT = 0x0006,
     REMOTE_NAME_REQ = 0x0019,
@@ -16,6 +17,10 @@ inquiry_cp = Struct("inquiry_cp",
     Array(3, ULInt8("lap")),
     ULInt8("length"),
     ULInt8("num_rsp"),
+)
+
+inquiry_cancel_rp = Struct("inquiry_cancel_rp",
+    ULInt8("status"),
 )
 
 create_conn_cp = Struct("create_conn_cp",
@@ -377,6 +382,7 @@ command = Struct("command",
             {
                 # Link Control (OGF 0x01)
                 "INQUIRY": inquiry_cp,
+                "INQUIRY_CANCEL": Pass,
                 "CREATE_CONN": create_conn_cp,
                 "DISCONNECT": disconnect_cp,
                 "REMOTE_NAME_REQ": remote_name_req_cp,
@@ -466,6 +472,8 @@ evt_cmd_complete = Struct("evt_cmd_complete",
     Opcode,
     FixedSwitch("rparams", lambda ctx: ctx.opcode.ocf,
         {
+            # Link Control (OGF 0x01)
+            "INQUIRY_CANCEL": inquiry_cancel_rp,
             # Controller & Baseband (OGF 0x03)
             "SET_EVENT_MASK": set_event_mask_rp,
             "RESET": reset_rp,

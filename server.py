@@ -339,6 +339,8 @@ class DummyBT(asynchat.async_chat):
                     params = Container(status = 0)
                 )
             ))
+        elif ocf == "INQUIRY_CANCEL":
+            c = cmd_complete(Container(status = 0))
         elif ocf == "CREATE_CONN":
             assert d.packet.params.bdaddr == [0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca]
             c = []
