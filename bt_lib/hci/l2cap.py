@@ -1,33 +1,6 @@
 from construct import *
 from bt_lib.construct_helpers import *
 
-def _build_context(ctx, fields):
-    c = Container()
-
-    while ctx.get("data") and isinstance(ctx["data"], Container):
-        for f in fields:
-            if ctx.data.get(f):
-                c[f] = ctx.data.get(f)
-
-        ctx = ctx.data
-
-    return c
-
-# FIXME: find more elegant solution for calculating dlen
-class HeaderAdapter(Adapter):
-    def _encode(self, obj, ctx):
-        assert self.subcon.subcons[1].name == "data"
-
-        c = _build_context(ctx, ("cid", "code", "type"))
-        obj.dlen = self.subcon.subcons[1].sizeof(c)
-
-        return obj
-
-    def _decode(self, obj, ctx):
-        assert self.subcon.subcons[1].name == "data"
-        del obj.dlen
-        return obj
-
 l2cap_hdr = Struct("l2cap_hdr",
     ULInt16("dlen"),
     Enum(ULInt16("cid"),
@@ -97,7 +70,7 @@ l2cap_info_req = Struct("l2cap_info_req",
 l2cap_info_rsp = Struct("l2cap_info_rsp",
     l2cap_info_type,
     ULInt16("result"),
-    FixedSwitch("data", lambda ctx: ctx.type,
+    Switch("data", lambda ctx: ctx.type,
         {
             "FEAT_MASK": ULInt32("feat_mask"),
             "FIXED_CHAN": Array(8, ULInt8("fixed_chan")),
@@ -105,9 +78,9 @@ l2cap_info_rsp = Struct("l2cap_info_rsp",
     ),
 )
 
-l2cap_sig = HeaderAdapter(Struct("l2cap_sig",
+l2cap_sig = DataStruct("l2cap_sig",
     Embed(l2cap_cmd_hdr),
-    FixedSwitch("data", lambda ctx: ctx.code,
+    Switch("data", lambda ctx: ctx.code,
         {
             "CONN_REQ": l2cap_conn_req,
             "CONN_RSP": l2cap_conn_rsp,
@@ -119,13 +92,13 @@ l2cap_sig = HeaderAdapter(Struct("l2cap_sig",
             "INFO_RSP": l2cap_info_rsp,
         }
     ),
-))
+)
 
-l2cap = HeaderAdapter(Struct("l2cap",
+l2cap = DataStruct("l2cap",
     Embed(l2cap_hdr),
     Switch("data", lambda ctx: ctx.cid,
         {
             "SIGNALING": l2cap_sig,
         }
     ),
-))
+)

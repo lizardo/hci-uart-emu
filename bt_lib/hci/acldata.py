@@ -17,10 +17,8 @@ Header = TunnelAdapter(
     )
 )
 
-acldata = Struct("acldata",
+acldata = DataStruct("acldata",
     Header,
-    TunnelAdapter(
-        PascalString("data", ULInt16("dlen")),
-        l2cap,
-    ),
+    ULInt16("dlen"),
+    Rename("data", l2cap),
 )

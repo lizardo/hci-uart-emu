@@ -2,3 +2,4 @@ TODO
 ====
 
 * Use common BD address format
+* Reuse DataStruct for HCI command/event parameters instead of PLenAdapter
