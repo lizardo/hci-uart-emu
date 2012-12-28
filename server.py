@@ -156,7 +156,8 @@ class DummyBT(asynchat.async_chat):
             )
         elif packet.data.cid == 'SIGNALING' and \
                 packet.data.data.code == 'CONF_REQ':
-            c = Container(
+            c = []
+            c.append(Container(
                 packet_indicator = 'ACLDATA',
                 packet = Container(
                     header = Container(
@@ -173,11 +174,42 @@ class DummyBT(asynchat.async_chat):
                                 scid = packet.data.data.data.dcid,
                                 flags = 0x0000,
                                 result = 0x0000,
+                                l2cap_conf_opt = [
+                                    Container(type = 'MTU', data = 672),
+                                ],
                             ),
                         ),
                     )
                 )
-            )
+            ))
+            c.append(Container(
+                packet_indicator = 'ACLDATA',
+                packet = Container(
+                    header = Container(
+                        handle = packet.header.handle,
+                        flags = 'START',
+                    ),
+                    data = Container(
+                        cid = 'SIGNALING',
+                        data = Container(
+                            ident = 1,
+                            code = 'CONF_REQ',
+                            data = Container(
+                                # arbitrarily set DCID == SCID
+                                dcid = packet.data.data.data.dcid,
+                                flags = 0x0000,
+                                l2cap_conf_opt = [
+                                    Container(type = 'MTU', data = 672),
+                                ],
+                            ),
+                        ),
+                    )
+                )
+            ))
+        elif packet.data.cid == 'SIGNALING' and \
+                packet.data.data.code == 'CONF_RSP':
+            print("DEBUG:", packet)
+            c = []
         else:
             raise NotImplementedError, "Unsupported ACL packet: %s" % packet
 
