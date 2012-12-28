@@ -368,7 +368,7 @@ class DummyBT(asynchat.async_chat):
                     params = Container(
                         status = 0,
                         handle = d.packet.params.handle,
-                        reason = d.packet.params.reason,
+                        reason = 0x16, # Connection Terminated By Local Host
                     )
                 )
             ))
