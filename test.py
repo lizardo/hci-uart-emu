@@ -1,5 +1,6 @@
 from bt_lib.hci.transport import uart
 from construct import Container
+from bt_lib.sdp import sdp
 
 def h2b(h):
     return h.replace(" ","").decode("hex")
@@ -273,3 +274,28 @@ def test12():
     )
     assert uart.parse(b) == c
     assert uart.build(c) == b
+
+def test13():
+    b = h2b("060000000f3503190100ffff35050a0000ffff00")
+    c = Container(
+        pdu_id = 'SVC_SEARCH_ATTR_REQ',
+        tid = 0,
+        params = Container(
+            pattern = Container(
+                data = [
+                    Container(data = "L2CAP", type_size = "UUID16"),
+                ],
+                type_size = "SEQ8",
+            ),
+            attr_list = Container(
+                data = [
+                    Container(data = 0xffff, type_size = "UINT32"),
+                ],
+                type_size = "SEQ8",
+            ),
+            max_count = 0xffff,
+            cont = "",
+        ),
+    )
+    assert sdp.parse(b) == c, sdp.parse(b)
+    assert sdp.build(c) == b
