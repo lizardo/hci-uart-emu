@@ -299,3 +299,221 @@ def test13():
     )
     assert sdp.parse(b) == c, sdp.parse(b)
     assert sdp.build(c) == b
+
+def test14():
+    b = h2b("07 00 00 02 21 02 1E 36 02 1B 36 01 C3 09 00 00 0A 00 01 00 00 09 00 01 35 03 19 11 24 09 00 04 35 0D 35 06 19 01 00 09 00 11 35 03 19 00 11 09 00 05 35 03 19 10 02 09 00 06 35 09 09 65 6E 09 00 6A 09 01 00 09 00 09 35 08 35 06 19 11 24 09 01 00 09 00 0D 35 0F 35 0D 35 06 19 01 00 09 00 13 35 03 19 00 11 09 01 00 25 17 41 70 70 6C 65 20 57 69 72 65 6C 65 73 73 20 4B 65 79 62 6F 61 72 64 09 01 01 25 08 4B 65 79 62 6F 61 72 64 09 01 02 25 0A 41 70 70 6C 65 20 49 6E 63 2E 09 02 01 09 01 11 09 02 02 08 40 09 02 03 08 21 09 02 04 28 01 09 02 05 28 01 09 02 06 35 E6 35 E4 08 22 25 E0 05 01 09 02 A1 01 85 02 09 01 A1 00 05 09 19 01 29 08 15 00 25 01 95 08 75 01 81 02 05 01 09 30 09 31 09 38 15 81 25 7F 75 08 95 03 81 06 C0 C0 05 01 09 06 A1 01 85 01 75 01 95 08 05 07 19 E0 29 E7 15 00 25 01 81 02 95 01 75 08 81 03 95 06 75 08 15 00 26 FF 00 05 07 19 00 29 FF 81 00 95 05 75 01 05 08 85 01 19 01 29 05 91 02 95 01 75 03 91 03 C0 05 01 09 80 A1 01 85 04 75 08 95 01 15 00 25 01 19 81 29 83 81 00 C0 05 0C 09 01 A1 01 85 06 15 00 25 01 75 01 95 17 0A 23 02 0A B1 01 09 30 0A 25 02 0A 21 02 09 CD 09 B8 09 B6 09 B5 09 E9 09 EA 09 E2 0A 94 01 0A 92 01 0A 83 01 0A 8A 01 0A 27 02 0A 24 02 0A 2A 02 0A 26 02 0A 96 01 09 B7 0A 82 01 81 02 95 01 75 01 81 03 C0 09 02 07 35 08 35 06 09 04 09 09 01 00 09 02 09 28 01 09 02 0A 28 01 09 02 0B 09 01 00 09 02 0C 09 1F 40 09 02 0D 28 01 09 02 0E 28 01 36 00 52 09 00 00 0A 00 01 00 01 09 00 01 35 03 19 12 00 09 00 04 35 0D 35 06 19 01 00 09 00 01 35 03 19 00 01 09 00 09 35 08 35 06 19 12 00 09 01 00 09 02 00 09 01 00 09 02 01 09 05 AC 09 02 02 09 02 2C 09 02 03 09 01 40 09 02 04 28 01 09 02 05 09 00 02 00")
+    c = Container(
+        pdu_id = 'SVC_SEARCH_ATTR_RSP',
+        tid = 0,
+        params = Container(
+            attr_lists = Container(
+                type_size = 'SEQ16',
+                data = [
+                    Container(
+                        type_size = 'SEQ16',
+                        data = [
+                            Container(data = 0x0000, type_size = 'UINT16'),
+                            Container(data = 0x10000, type_size = 'UINT32'),
+                            Container(data = 0x0001, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(data = 'HID', type_size = 'UUID16'),
+                                ],
+                            ),
+                            Container(data = 0x0004, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(
+                                        type_size = 'SEQ8',
+                                        data = [
+                                            Container(data = 'L2CAP', type_size = 'UUID16'),
+                                            Container(data = 0x0011, type_size = 'UINT16'),
+                                        ],
+                                    ),
+                                    Container(
+                                        type_size = 'SEQ8',
+                                        data = [
+                                            Container(data = 'HIDP', type_size = 'UUID16'),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            Container(data = 0x0005, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(data = 'PUBLIC_BROWSE_GROUP', type_size = 'UUID16'),
+                                ],
+                            ),
+                            Container(data = 0x0006, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(data = 0x656e, type_size = 'UINT16'),
+                                    Container(data = 0x006a, type_size = 'UINT16'),
+                                    Container(data = 0x0100, type_size = 'UINT16'),
+                                ],
+                            ),
+                            Container(data = 0x0009, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(
+                                        type_size = 'SEQ8',
+                                        data = [
+                                            Container(data = 'HID', type_size = 'UUID16'),
+                                            Container(data = 0x0100, type_size = 'UINT16'),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            Container(data = 0x000d, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(
+                                        type_size = 'SEQ8',
+                                        data = [
+                                            Container(
+                                                type_size = 'SEQ8',
+                                                data = [
+                                                    Container(data = 'L2CAP', type_size = 'UUID16'),
+                                                    Container(data = 0x0013, type_size = 'UINT16'),
+                                                ],
+                                            ),
+                                            Container(
+                                                type_size = 'SEQ8',
+                                                data = [
+                                                    Container(data = 'HIDP', type_size = 'UUID16'),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            Container(data = 0x0100, type_size = 'UINT16'),
+                            Container(data = 'Apple Wireless Keyboard', type_size = 'STR8'),
+                            Container(data = 0x0101, type_size = 'UINT16'),
+                            Container(data = 'Keyboard', type_size = 'STR8'),
+                            Container(data = 0x0102, type_size = 'UINT16'),
+                            Container(data = 'Apple Inc.', type_size = 'STR8'),
+                            Container(data = 0x0201, type_size = 'UINT16'),
+                            Container(data = 0x0111, type_size = 'UINT16'),
+                            Container(data = 0x0202, type_size = 'UINT16'),
+                            Container(data = 0x40, type_size = 'UINT8'),
+                            Container(data = 0x0203, type_size = 'UINT16'),
+                            Container(data = 0x21, type_size = 'UINT8'),
+                            Container(data = 0x0204, type_size = 'UINT16'),
+                            Container(data = True, type_size = 'BOOL'),
+                            Container(data = 0x0205, type_size = 'UINT16'),
+                            Container(data = True, type_size = 'BOOL'),
+                            Container(data = 0x0206, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(
+                                        type_size = 'SEQ8',
+                                        data = [
+                                            Container(data = 0x22, type_size = 'UINT8'),
+                                            Container(
+                                                type_size = 'STR8',
+                                                data = "\x05\x01\t\x02\xa1\x01\x85\x02\t\x01\xa1\x00\x05\t\x19\x01)\x08\x15\x00%\x01\x95\x08u\x01\x81\x02\x05\x01\t0\t1\t8\x15\x81%\x7fu\x08\x95\x03\x81\x06\xc0\xc0\x05\x01\t\x06\xa1\x01\x85\x01u\x01\x95\x08\x05\x07\x19\xe0)\xe7\x15\x00%\x01\x81\x02\x95\x01u\x08\x81\x03\x95\x06u\x08\x15\x00&\xff\x00\x05\x07\x19\x00)\xff\x81\x00\x95\x05u\x01\x05\x08\x85\x01\x19\x01)\x05\x91\x02\x95\x01u\x03\x91\x03\xc0\x05\x01\t\x80\xa1\x01\x85\x04u\x08\x95\x01\x15\x00%\x01\x19\x81)\x83\x81\x00\xc0\x05\x0c\t\x01\xa1\x01\x85\x06\x15\x00%\x01u\x01\x95\x17\n#\x02\n\xb1\x01\t0\n%\x02\n!\x02\t\xcd\t\xb8\t\xb6\t\xb5\t\xe9\t\xea\t\xe2\n\x94\x01\n\x92\x01\n\x83\x01\n\x8a\x01\n'\x02\n$\x02\n*\x02\n&\x02\n\x96\x01\t\xb7\n\x82\x01\x81\x02\x95\x01u\x01\x81\x03\xc0",
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            Container(data = 0x0207, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(
+                                        type_size = 'SEQ8',
+                                        data = [
+                                            Container(data = 0x0409, type_size = 'UINT16'),
+                                            Container(data = 0x0100, type_size = 'UINT16'),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            Container(data = 0x0209, type_size = 'UINT16'),
+                            Container(data = True, type_size = 'BOOL'),
+                            Container(data = 0x020a, type_size = 'UINT16'),
+                            Container(data = True, type_size = 'BOOL'),
+                            Container(data = 0x020b, type_size = 'UINT16'),
+                            Container(data = 0x0100, type_size = 'UINT16'),
+                            Container(data = 0x020c, type_size = 'UINT16'),
+                            Container(data = 0x1f40, type_size = 'UINT16'),
+                            Container(data = 0x020d, type_size = 'UINT16'),
+                            Container(data = True, type_size = 'BOOL'),
+                            Container(data = 0x020e, type_size = 'UINT16'),
+                            Container(data = True, type_size = 'BOOL'),
+                        ],
+                    ),
+                    Container(
+                        type_size = 'SEQ16',
+                        data = [
+                            Container(data = 0x0000, type_size = 'UINT16'),
+                            Container(data = 0x10001, type_size = 'UINT32'),
+                            Container(data = 0x0001, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(data = 'PNP_INFO', type_size = 'UUID16'),
+                                ],
+                            ),
+                            Container(data = 0x0004, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(
+                                        type_size = 'SEQ8',
+                                        data = [
+                                            Container(data = 'L2CAP', type_size = 'UUID16'),
+                                            Container(data = 0x0001, type_size = 'UINT16'),
+                                        ],
+                                    ),
+                                    Container(
+                                        type_size = 'SEQ8',
+                                        data = [
+                                            Container(data = 'SDP', type_size = 'UUID16'),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            Container(data = 0x0009, type_size = 'UINT16'),
+                            Container(
+                                type_size = 'SEQ8',
+                                data = [
+                                    Container(
+                                        type_size = 'SEQ8',
+                                        data = [
+                                            Container(data = 'PNP_INFO', type_size = 'UUID16'),
+                                            Container(data = 0x0100, type_size = 'UINT16'),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            Container(data = 0x0200, type_size = 'UINT16'),
+                            Container(data = 0x0100, type_size = 'UINT16'),
+                            Container(data = 0x0201, type_size = 'UINT16'),
+                            Container(data = 0x05ac, type_size = 'UINT16'),
+                            Container(data = 0x0202, type_size = 'UINT16'),
+                            Container(data = 0x022c, type_size = 'UINT16'),
+                            Container(data = 0x0203, type_size = 'UINT16'),
+                            Container(data = 0x0140, type_size = 'UINT16'),
+                            Container(data = 0x0204, type_size = 'UINT16'),
+                            Container(data = True, type_size = 'BOOL'),
+                            Container(data = 0x0205, type_size = 'UINT16'),
+                            Container(data = 0x0002, type_size = 'UINT16'),
+                        ],
+                    ),
+                ],
+            ),
+            cont = '',
+        ),
+    )
+    assert sdp.parse(b) == c, sdp.parse(b)
+    assert sdp.build(c) == b

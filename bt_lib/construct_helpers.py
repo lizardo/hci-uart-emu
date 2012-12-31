@@ -75,6 +75,18 @@ class _DataAdapter(Adapter):
 def DataStruct(name, *subcons, **kwds):
     return _DataAdapter(Struct(name, *subcons), **kwds)
 
+class AssertEof(Subconstruct):
+    def _parse(self, stream, context):
+        obj = self.subcon._parse(stream, context)
+        pos = stream.tell()
+        stream.seek(0, 2)
+        eof = stream.tell()
+        stream.seek(pos)
+        if pos != eof:
+            self.subcon.subcon._parse(stream, context)
+
+        return obj
+
 def pprint_container(obj, indent=0):
     s = ""
     if isinstance(obj, Container):
