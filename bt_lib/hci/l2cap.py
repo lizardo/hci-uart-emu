@@ -5,6 +5,12 @@ l2cap_hdr = Struct("l2cap_hdr",
     ULInt16("dlen"),
     Enum(ULInt16("cid"),
         SIGNALING = 0x0001,
+        CONN_LESS = 0x0002,
+        A2MP = 0x0003,
+        LE_DATA = 0x0004,
+        LE_SIGNALING = 0x0005,
+        SMP = 0x0006,
+        _default_ = Pass,
     ),
 )
 
@@ -111,6 +117,7 @@ l2cap = DataStruct("l2cap",
     Switch("data", lambda ctx: ctx.cid,
         {
             "SIGNALING": l2cap_sig,
-        }
+        },
+        default = Field("conn_data", lambda ctx: ctx.dlen),
     ),
 )
