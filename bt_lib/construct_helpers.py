@@ -74,3 +74,26 @@ class _DataAdapter(Adapter):
 
 def DataStruct(name, *subcons, **kwds):
     return _DataAdapter(Struct(name, *subcons), **kwds)
+
+def pprint_container(obj, indent=0):
+    s = ""
+    if isinstance(obj, Container):
+        s += "Container(\n"
+        for k in sorted(obj.keys()):
+            s += "    " * (indent + 1) + "%s = %s,\n" % (k, pprint_container(obj[k], indent + 1))
+        s += "    " * indent + ")"
+    elif isinstance(obj, str):
+        s += repr(obj)
+    elif isinstance(obj, bool):
+        s += "True" if obj else "False"
+    elif isinstance(obj, int):
+        s += "%d" % obj
+    elif isinstance(obj, list):
+        s += "[\n"
+        for i in obj:
+            s += "    " * (indent + 1) + "%s,\n" % pprint_container(i, indent + 1)
+        s += "    " * indent + "]"
+    else:
+        assert NotImplementedError, "Not supported: %s" % obj
+
+    return s
