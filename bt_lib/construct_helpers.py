@@ -58,6 +58,10 @@ class _DataAdapter(Adapter):
         self.len_field = len_field
 
     def _encode(self, obj, ctx):
+        if isinstance(obj[self.data_field], str):
+            obj[self.len_field] = len(obj[self.data_field])
+            return obj
+
         obj[self.len_field] = 0
         self.subcon._build(obj, BytesIO(), ctx)
         s = BytesIO()
