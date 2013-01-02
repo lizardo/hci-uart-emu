@@ -246,6 +246,20 @@ class Adapter(object):
                     )
                 )
             ))
+        elif ocf == "AUTH_REQUESTED":
+            assert self.connections.get(packet.params.handle)
+            c.append(cmd_status(0))
+            # assume not in SSP mode
+            c.append(Container(
+                packet_indicator = "EVENT",
+                packet = Container(
+                    evt = "AUTH_COMPLETE",
+                    params = Container(
+                        status = 0,
+                        handle = packet.params.handle,
+                    )
+                )
+            ))
         else:
             raise NotImplementedError, "Unsupported packet: %s" % d
 
