@@ -30,7 +30,11 @@ l2cap_cmd_hdr = Struct("l2cap_cmd_hdr",
 )
 
 l2cap_conn_req = Struct("l2cap_conn_req",
-    ULInt16("psm"),
+    Enum(ULInt16("psm"),
+        SDP = 0x0001,
+        HIDP_CTRL = 0x0011,
+        HIDP_INTR = 0x0013,
+    ),
     ULInt16("scid"),
 )
 
