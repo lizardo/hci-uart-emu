@@ -260,6 +260,20 @@ class Adapter(object):
                     )
                 )
             ))
+        elif ocf == "SET_CONN_ENCRYPT":
+            assert self.connections.get(packet.params.handle)
+            c.append(cmd_status(0))
+            c.append(Container(
+                packet_indicator = "EVENT",
+                packet = Container(
+                    evt = "ENCRYPT_CHANGE",
+                    params = Container(
+                        status = 0,
+                        handle = packet.params.handle,
+                        encrypt = packet.params.encrypt,
+                    )
+                )
+            ))
         else:
             raise NotImplementedError, "Unsupported packet: %s" % d
 
