@@ -553,6 +553,17 @@ evt_read_remote_ext_features_complete = Struct("evt_read_remote_ext_features_com
     Array(8, ULInt8("features")),
 )
 
+evt_extended_inquiry_result = Struct("evt_extended_inquiry_result",
+    ULInt8("num_rsp"),
+    Array(6, ULInt8("bdaddr")),
+    ULInt8("pscan_rep_mode"),
+    ULInt8("reserved"),
+    Array(3, ULInt8("dev_class")),
+    ULInt16("clock_offset"),
+    SLInt8("rssi"),
+    Array(HCI_MAX_EIR_LENGTH, ULInt8("data")),
+)
+
 event = Struct("event",
     Enum(ULInt8("evt"),
         INQUIRY_COMPLETE = 0x01,
@@ -567,6 +578,7 @@ event = Struct("event",
         CMD_STATUS = 0x0f,
         NUM_COMP_PKTS = 0x13,
         READ_REMOTE_EXT_FEATURES_COMPLETE = 0x23,
+        EXTENDED_INQUIRY_RESULT = 0x2f,
     ),
     PLenAdapter(Sequence("params",
         ULInt8("plen"),
@@ -584,6 +596,7 @@ event = Struct("event",
                 "CMD_STATUS": evt_cmd_status,
                 "NUM_COMP_PKTS": evt_num_comp_pkts,
                 "READ_REMOTE_EXT_FEATURES_COMPLETE": evt_read_remote_ext_features_complete,
+                "EXTENDED_INQUIRY_RESULT": evt_extended_inquiry_result,
             }
         ),
     )),

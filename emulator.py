@@ -159,6 +159,24 @@ class Adapter(object):
                         )
                     )
                 ))
+                c.append(Container(
+                    packet_indicator = "EVENT",
+                    packet = Container(
+                        evt = "EXTENDED_INQUIRY_RESULT",
+                        params = Container(
+                            num_rsp = 1,
+                            bdaddr = d.bdaddr,
+                            pscan_rep_mode = 0,
+                            reserved = 0,
+                            dev_class = [0, 0, 0],
+                            clock_offset = 0x0000,
+                            rssi = 0,
+                            # send device name as EIR short name
+                            data = [len(d.name) + 1, 0x08] + [ord(x) for x in d.name] + [0] * (240 - len(d.name) - 2),
+                        )
+                    )
+                ))
+
             c.append(Container(
                 packet_indicator = "EVENT",
                 packet = Container(
