@@ -446,8 +446,9 @@ class Adapter(object):
         elif self.cid_table.get(packet.data.cid):
             psm = self.cid_table[packet.data.cid]
             if psm == 'SDP':
-                # SDP
                 c.append(self.process_sdp(packet))
+            elif psm == 'HIDP_INTR':
+                print("DEBUG:", packet)
             else:
                 raise NotImplementedError, "Unsupported PSM: %s" % psm
         else:
