@@ -1,4 +1,23 @@
-ogf_1 = (
+pkt_indicator = (
+    (1, "HCI Command"),
+    (2, "ACL Data"),
+    (3, "SCO Data"),
+    (4, "HCI Event"),
+)
+
+ogf_list = (
+    (1, "Link Control Commands"),
+    (2, "Link Policy Commands"),
+    (3, "Controller & Baseband Commands"),
+    (4, "Informational Parameters"),
+    (5, "Status Parameters"),
+    (6, "Testing Commands"),
+    (8, "LE Controller Commands"),
+)
+
+ocf = {}
+
+ocf[1] = (
     (0x01, "Inquiry"),
     (0x02, "Inquiry Cancel"),
     (0x03, "Periodic Inquiry Mode"),
@@ -56,7 +75,7 @@ ogf_1 = (
     (0x3e, "Enhanced Accept Synchronous Connection"),
 )
 
-ogf_2 = (
+ocf[2] = (
     (0x01, "Holde Mode"),
     # 0x02 - reserved command
     (0x03, "Sniff Mode"),
@@ -76,7 +95,7 @@ ogf_2 = (
     (0x11, "Sniff Subrating"),
 )
 
-ogf_3 = (
+ocf[3] = (
     (0x01, "Set Event Mask"),
     # 0x02 - reserved command
     (0x03, "Reset"),
@@ -182,7 +201,7 @@ ogf_3 = (
     (0x73, "Set MWS Pattern Configuration"),
 )
 
-ogf_4 = (
+ocf[4] = (
     (0x01, "Read Local Version Information"),
     (0x02, "Read Local Supported Commands"),
     (0x03, "Read Local Supported Features"),
@@ -196,7 +215,7 @@ ogf_4 = (
     (0x0b, "Read Local Supported Codecs"),
 )
 
-ogf_5 = (
+ocf[5] = (
     (0x01, "Read Failed Contact Counter"),
     (0x02, "Reset Failed Contact Counter"),
     (0x03, "Read Link Quality"),
@@ -211,7 +230,7 @@ ogf_5 = (
     (0x0c, "Get MWS Transport Layer Configuration"),
 )
 
-ogf_6 = (
+ocf[6] = (
     (0x01, "Read Loopback Mode"),
     (0x02, "Write Loopback Mode"),
     (0x03, "Enable Device Under Test Mode"),
@@ -222,7 +241,7 @@ ogf_6 = (
     (0x09, "AMP Test"),
 )
 
-ogf_8 = (
+ocf[8] = (
     (0x01, "LE Set Event Mask"),
     (0x02, "LE Read Buffer Size"),
     (0x03, "LE Read Local Supported Features"),

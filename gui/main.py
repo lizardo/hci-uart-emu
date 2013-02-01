@@ -19,6 +19,7 @@ class MainWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="BlueZ test case generator")
 
+        self.current_frame = None
         self.set_default_size(450, 450)
 
         action_group = Gtk.ActionGroup("actions")
@@ -33,9 +34,9 @@ class MainWindow(Gtk.Window):
         uimanager.insert_action_group(action_group)
         self.add_accel_group(uimanager.get_accel_group())
 
-        menubar = uimanager.get_widget("/MenuBar")
-
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+
+        menubar = uimanager.get_widget("/MenuBar")
         box.pack_start(menubar, False, False, 0)
 
         toolbar = uimanager.get_widget("/ToolBar")
@@ -57,49 +58,69 @@ class MainWindow(Gtk.Window):
         grid = Gtk.Grid()
         grid.set_column_spacing(10)
         grid.add(Gtk.Label("Packet indicator:"))
-        combo = Gtk.ComboBoxText()
-        combo.set_entry_text_column(0)
-        combo.connect("changed", self.on_combo_changed)
-        for v in ["HCI Command (1)", "ACL Data (2)", "SCO Data (3)", "HCI Event (4)"]:
-            combo.append_text(v)
-        combo.set_active(0)
+        combo = Gtk.ComboBox.new_with_entry()
+        self.set_model(combo, string_tables.pkt_indicator)
+        combo.connect("changed", self.packet_selected, box)
         grid.add(combo)
         box.pack_start(grid, False, False, 0)
 
-        frame = Gtk.Frame(label="HCI Command")
-
-        grid = Gtk.Grid()
-        grid.set_column_spacing(10)
-        grid.attach(Gtk.Label("OGF"), 0, 0, 1, 1)
-        combo = Gtk.ComboBoxText()
-        combo.set_entry_text_column(0)
-        combo.connect("changed", self.on_combo_changed)
-        for v in ["Link Control Commands (1)", "Link Policy Commands (2)",
-                "Controller & Baseband Commands (3)",
-                "Informational Parameters (4)", "Status Parameters (5)",
-                "Testing Commands (6)", "LE Controller Commands (8)"]:
-            combo.append_text(v)
-        combo.set_active(0)
-        grid.attach(combo, 1, 0, 1, 1)
-
-        grid.attach(Gtk.Label("OCF"), 0, 1, 1, 1)
-        combo = Gtk.ComboBoxText()
-        combo.set_entry_text_column(0)
-        combo.connect("changed", self.on_combo_changed)
-        for i in string_tables.ogf_1:
-            combo.append_text("%s (%d)" % (i[1], i[0]))
-        combo.set_active(0)
-        grid.attach(combo, 1, 1, 1, 1)
-
-        frame.add(grid)
-        box.pack_start(frame, False, False, 0)
-
         self.add(box)
 
-    def on_combo_changed(self, combo):
-        text = combo.get_active_text()
-        if text is not None:
-            print("Selected: %s" % text)
+    def set_model(self, combo, data):
+        liststore = Gtk.ListStore(int, str)
+        for (i, text) in data:
+            liststore.append((i, "%s (%d)" % (text, i)))
+
+        combo.set_model(liststore)
+        if len(data) > 10:
+            combo.set_wrap_width(3)
+        combo.set_entry_text_column(1)
+
+    def create_packet_frame(self, pkt):
+        if pkt == 1:
+            frame = Gtk.Frame(label="HCI Command")
+
+            grid = Gtk.Grid()
+            grid.set_column_spacing(10)
+
+            grid.attach(Gtk.Label("OGF"), 0, 0, 1, 1)
+            #combo.set_active(0)
+            combo_ocf = Gtk.ComboBox.new_with_entry()
+            combo = Gtk.ComboBox.new_with_entry()
+            self.set_model(combo, string_tables.ogf_list)
+            combo.connect("changed", self.ogf_selected, combo_ocf)
+            grid.attach(combo, 1, 0, 1, 1)
+
+            grid.attach(Gtk.Label("OCF"), 0, 1, 1, 1)
+            grid.attach(combo_ocf, 1, 1, 1, 1)
+
+            frame.add(grid)
+        else:
+            frame = Gtk.Frame(label="Unsupported packet")
+            frame.add(Gtk.Label("Packet not supported!"))
+
+        return frame
+
+    def packet_selected(self, combo, box):
+        it = combo.get_active_iter()
+        if it is None:
+            return
+        pkt = combo.get_model()[it][0]
+        frame = self.create_packet_frame(pkt)
+        if self.current_frame is not None:
+            self.current_frame.destroy()
+        box.pack_start(frame, False, False, 0)
+        frame.show_all()
+        self.current_frame = frame
+
+    def ogf_selected(self, combo, combo_ocf):
+        it = combo.get_active_iter()
+        if it is None:
+            return
+        ogf = combo.get_model()[it][0]
+        self.set_model(combo_ocf, string_tables.ocf[ogf])
+        combo_ocf.get_child().set_text("")
+        combo_ocf.set_active_iter(None)
 
 win = MainWindow()
 win.connect("delete-event", Gtk.main_quit)
