@@ -1,5 +1,12 @@
 #!/usr/bin/python
+import sys
+sys.path.append(".")
+
 from gi.repository import Gtk
+from construct import Container
+import struct
+
+from bt_lib.hci.transport import uart
 import string_tables
 
 UI_INFO = """
@@ -20,6 +27,7 @@ class MainWindow(Gtk.Window):
         Gtk.Window.__init__(self, title="BlueZ test case generator")
 
         self.current_frame = None
+        self.current_params = None
         self.set_default_size(450, 450)
 
         action_group = Gtk.ActionGroup("actions")
@@ -67,9 +75,9 @@ class MainWindow(Gtk.Window):
         self.add(box)
 
     def set_model(self, combo, data):
-        liststore = Gtk.ListStore(int, str)
+        liststore = Gtk.ListStore(str, str)
         for (i, text) in data:
-            liststore.append((i, "%s (%d)" % (text, i)))
+            liststore.append((i, text))
 
         combo.set_model(liststore)
         if len(data) > 10:
@@ -77,7 +85,7 @@ class MainWindow(Gtk.Window):
         combo.set_entry_text_column(1)
 
     def create_packet_frame(self, pkt):
-        if pkt == 1:
+        if pkt == "COMMAND":
             frame = Gtk.Frame(label="HCI Command")
 
             grid = Gtk.Grid()
@@ -93,6 +101,9 @@ class MainWindow(Gtk.Window):
 
             grid.attach(Gtk.Label("OCF"), 0, 1, 1, 1)
             grid.attach(combo_ocf, 1, 1, 1, 1)
+            grid.insert_row(2)
+            self.save_button = Gtk.Button("Save")
+            grid.attach(self.save_button, 0, 3, 2, 1)
 
             frame.add(grid)
         else:
@@ -119,8 +130,71 @@ class MainWindow(Gtk.Window):
             return
         ogf = combo.get_model()[it][0]
         self.set_model(combo_ocf, string_tables.ocf[ogf])
+        combo_ocf.connect("changed", self.ocf_selected, ogf)
         combo_ocf.get_child().set_text("")
         combo_ocf.set_active_iter(None)
+
+    def ocf_selected(self, combo, ogf):
+        it = combo.get_active_iter()
+        if it is None:
+            return
+
+        ocf = combo.get_model()[it][0]
+        print "OCF selected: %s" % ocf
+        container = Container(
+            packet_indicator = 'COMMAND',
+            packet = Container(
+                opcode = Container(
+                    ogf = ogf,
+                    ocf = ocf,
+                ),
+            )
+        )
+
+        if self.current_params is not None:
+            self.current_params.destroy()
+
+        frame = Gtk.Frame(label="Parameters")
+        grid = Gtk.Grid()
+        grid.set_column_spacing(10)
+
+        if ocf == "INQUIRY":
+            print("Inquiry")
+            grid.attach(Gtk.Label("LAP"), 0, 0, 1, 1)
+            grid.attach(Gtk.Label("Inquiry Length"), 0, 1, 1, 1)
+            grid.attach(Gtk.Label("Num Responses"), 0, 2, 1, 1)
+            fields = {}
+            for (i, f) in enumerate(("lap", "length", "num_rsp")):
+                fields[f] = Gtk.Entry()
+                grid.attach(fields[f], 1, i, 1, 1)
+            self.save_button.connect("clicked", self.save_clicked, container,
+                    fields)
+        else:
+            grid.attach(Gtk.Label("OGF/OCF not supported!"), 0, 0, 1, 1)
+
+        frame.add(grid)
+        combo.get_parent().attach(frame, 0, 2, 2, 1)
+        frame.show_all()
+        self.current_params = frame
+
+    def save_clicked(self, button, container, fields):
+        p = container.packet
+
+        def uint16_to_array(i):
+            return struct.unpack("<4B", struct.pack("<L", i))
+
+        def text_to_int(t):
+            if t.lower().startswith("0x"):
+                return int(t, 16)
+            else:
+                return int(t)
+
+        if p.opcode.ocf == "INQUIRY":
+            p.params = Container()
+            for (f, t) in fields.items():
+                p.params[f] = text_to_int(t.get_text())
+            p.params.lap = uint16_to_array(p.params.lap)[:-1]
+            print("DEBUG: %s" % uart.build(container).encode("hex").upper())
 
 win = MainWindow()
 win.connect("delete-event", Gtk.main_quit)
